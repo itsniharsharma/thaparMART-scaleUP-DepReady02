@@ -1,51 +1,861 @@
-import { useEffect } from "react";
+import React, { useState, useEffect, createContext, useContext } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Home = () => {
-  const helloWorldApi = async () => {
+// Auth Context
+const AuthContext = createContext();
+
+const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const checkAuth = async () => {
     try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
+      const response = await axios.get(`${API}/auth/me`, {
+        withCredentials: true
+      });
+      setUser(response.data);
+    } catch (error) {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = (redirectUrl = window.location.href) => {
+    const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+    window.location.href = authUrl;
+  };
+
+  const logout = async () => {
+    try {
+      await axios.post(`${API}/auth/logout`, {}, {
+        withCredentials: true
+      });
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 
   useEffect(() => {
-    helloWorldApi();
+    // Check for session_id in URL fragment first
+    const fragment = window.location.hash;
+    if (fragment.includes('session_id=')) {
+      const sessionId = fragment.split('session_id=')[1].split('&')[0];
+      
+      // Exchange session ID for user data
+      axios.post(`${API}/auth/session?session_id=${sessionId}`, {}, {
+        withCredentials: true
+      }).then(response => {
+        setUser(response.data);
+        setLoading(false);
+        // Clean up URL
+        window.location.hash = '';
+        // Redirect to profile page
+        window.location.href = '/profile';
+      }).catch(error => {
+        console.error('Session authentication failed:', error);
+        setLoading(false);
+      });
+    } else {
+      checkAuth();
+    }
   }, []);
 
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
+    <AuthContext.Provider value={{ user, login, logout, loading, checkAuth }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+const useAuth = () => useContext(AuthContext);
+
+// Navigation Component
+const Navigation = () => {
+  const { user, login, logout } = useAuth();
+
+  return (
+    <nav className="bg-black text-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center space-x-8">
+            <Link to="/" className="text-2xl font-bold">thaparMART</Link>
+            <div className="hidden md:flex space-x-6">
+              <Link to="/" className="hover:text-gray-300 transition-colors">Home</Link>
+              <Link to="/marketplace" className="hover:text-gray-300 transition-colors">thaparMART</Link>
+              <Link to="/about" className="hover:text-gray-300 transition-colors">About</Link>
+              <Link to="/contact" className="hover:text-gray-300 transition-colors">Contact</Link>
+              {user && <Link to="/profile" className="hover:text-gray-300 transition-colors">Profile</Link>}
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <span className="text-sm">Hi, {user.name}</span>
+                <button
+                  onClick={logout}
+                  className="bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => login()}
+                className="bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Login / Register
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+// Home Page
+const Home = () => {
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="bg-black text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6">thaparMART</h1>
+          <p className="text-xl md:text-2xl mb-8">Your College Marketplace - Buy, Sell, Connect</p>
+          <Link to="/marketplace" className="bg-white text-black px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-200 transition-colors">
+            Browse Products
+          </Link>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Why Choose thaparMART?</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center p-6 border border-gray-200 rounded-lg">
+              <div className="text-4xl mb-4">📱</div>
+              <h3 className="text-xl font-semibold mb-2">Electronics</h3>
+              <p className="text-gray-600">Find the latest gadgets and electronics from fellow students</p>
+            </div>
+            <div className="text-center p-6 border border-gray-200 rounded-lg">
+              <div className="text-4xl mb-4">👕</div>
+              <h3 className="text-xl font-semibold mb-2">Clothes</h3>
+              <p className="text-gray-600">Trendy fashion items at student-friendly prices</p>
+            </div>
+            <div className="text-center p-6 border border-gray-200 rounded-lg">
+              <div className="text-4xl mb-4">📚</div>
+              <h3 className="text-xl font-semibold mb-2">Stationery</h3>
+              <p className="text-gray-600">All your academic supplies in one place</p>
+            </div>
+            <div className="text-center p-6 border border-gray-200 rounded-lg">
+              <div className="text-4xl mb-4">📝</div>
+              <h3 className="text-xl font-semibold mb-2">Notes</h3>
+              <p className="text-gray-600">Study materials and notes shared by students</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="bg-gray-50 py-20">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">How It Works</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="bg-black text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
+              <h3 className="text-xl font-semibold mb-2">Register</h3>
+              <p className="text-gray-600">Create your account with Google authentication</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-black text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">2</div>
+              <h3 className="text-xl font-semibold mb-2">List or Browse</h3>
+              <p className="text-gray-600">Upload products to sell or browse available items</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-black text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">3</div>
+              <h3 className="text-xl font-semibold mb-2">Connect</h3>
+              <p className="text-gray-600">Contact sellers directly through their profiles</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            <div>
+              <h3 className="text-4xl font-bold mb-2">1000+</h3>
+              <p className="text-gray-600">Active Students</p>
+            </div>
+            <div>
+              <h3 className="text-4xl font-bold mb-2">500+</h3>
+              <p className="text-gray-600">Products Listed</p>
+            </div>
+            <div>
+              <h3 className="text-4xl font-bold mb-2">200+</h3>
+              <p className="text-gray-600">Successful Transactions</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-black text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Trading?</h2>
+          <p className="text-xl mb-8">Join thousands of students already using thaparMART</p>
+          <Link to="/marketplace" className="bg-white text-black px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-200 transition-colors">
+            Get Started Now
+          </Link>
+        </div>
+      </section>
     </div>
   );
 };
 
+// Marketplace Component
+const Marketplace = () => {
+  const { user, login } = useAuth();
+  const [products, setProducts] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showSellForm, setShowSellForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const categories = ['Electronics', 'Clothes', 'Stationery', 'Notes'];
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(`${API}/products?category=${selectedCategory}`);
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [selectedCategory]);
+
+  const handleBuyClick = (product) => {
+    if (!user) {
+      alert("Please login to buy products!");
+      login();
+      return;
+    }
+    setSelectedProduct(product);
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">thaparMART</h1>
+            <p className="text-gray-600">Discover amazing products from your fellow students</p>
+          </div>
+          
+          <div className="flex space-x-4">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+            >
+              <option value="">All Categories</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            
+            {user && (
+              <button
+                onClick={() => setShowSellForm(true)}
+                className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Sell Product
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Products Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {products.map(product => (
+            <ProductCard key={product.id} product={product} onBuy={handleBuyClick} />
+          ))}
+        </div>
+
+        {products.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-xl">No products found in this category</p>
+          </div>
+        )}
+      </div>
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <ProductDetailModal 
+          product={selectedProduct} 
+          onClose={() => setSelectedProduct(null)} 
+        />
+      )}
+
+      {/* Sell Product Modal */}
+      {showSellForm && (
+        <SellProductModal 
+          onClose={() => setShowSellForm(false)}
+          onSuccess={() => {
+            setShowSellForm(false);
+            fetchProducts();
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// Product Card Component
+const ProductCard = ({ product, onBuy }) => {
+  return (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+      {product.images.length > 0 && (
+        <img 
+          src={product.images[0]} 
+          alt={product.title}
+          className="w-full h-48 object-cover"
+        />
+      )}
+      <div className="p-4">
+        <h3 className="font-semibold text-lg mb-2">{product.title}</h3>
+        <p className="text-gray-600 text-sm mb-2 line-clamp-2">{product.description}</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="text-2xl font-bold">₹{product.price}</p>
+            <p className="text-sm text-gray-500">{product.category}</p>
+          </div>
+          <button
+            onClick={() => onBuy(product)}
+            className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            View Details
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Product Detail Modal
+const ProductDetailModal = ({ product, onClose }) => {
+  const navigate = useNavigate();
+
+  const handleBuyClick = () => {
+    onClose();
+    navigate(`/profile/${product.seller_id}`);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">{product.title}</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-2xl"
+            >
+              ×
+            </button>
+          </div>
+          
+          {product.images.length > 0 && (
+            <div className="mb-4">
+              <img 
+                src={product.images[0]} 
+                alt={product.title}
+                className="w-full h-64 object-cover rounded-lg"
+              />
+            </div>
+          )}
+          
+          <div className="space-y-4">
+            <div>
+              <p className="text-3xl font-bold">₹{product.price}</p>
+              <p className="text-gray-600">{product.category}</p>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-2">Description</h3>
+              <p className="text-gray-700">{product.description}</p>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-2">Seller Information</h3>
+              <p className="text-gray-700">Name: {product.seller_name}</p>
+              <p className="text-gray-700">Email: {product.seller_email}</p>
+            </div>
+            
+            <button
+              onClick={handleBuyClick}
+              className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+            >
+              Contact Seller
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Sell Product Modal
+const SellProductModal = ({ onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    price: '',
+    category: 'Electronics'
+  });
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('price', formData.price);
+      formDataToSend.append('category', formData.category);
+      
+      images.forEach(image => {
+        formDataToSend.append('images', image);
+      });
+
+      await axios.post(`${API}/products`, formDataToSend, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      onSuccess();
+    } catch (error) {
+      console.error('Error creating product:', error);
+      alert('Failed to create product');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Sell Product</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-2xl"
+            >
+              ×
+            </button>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Product Title</label>
+              <input
+                type="text"
+                required
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Category</label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+              >
+                <option value="Electronics">Electronics</option>
+                <option value="Clothes">Clothes</option>
+                <option value="Stationery">Stationery</option>
+                <option value="Notes">Notes</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Price (₹)</label>
+              <input
+                type="number"
+                required
+                min="0"
+                step="0.01"
+                value={formData.price}
+                onChange={(e) => setFormData({...formData, price: e.target.value})}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Description</label>
+              <textarea
+                required
+                rows="3"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Product Images</label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => setImages(Array.from(e.target.files))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+            >
+              {loading ? 'Creating...' : 'Create Product'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Profile Component
+const Profile = () => {
+  const { user, checkAuth } = useAuth();
+  const { userId } = useLocation().pathname.split('/').pop();
+  const [profileUser, setProfileUser] = useState(null);
+  const [userProducts, setUserProducts] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    phone: '',
+    bio: ''
+  });
+
+  const isOwnProfile = !userId || userId === user?.id;
+  const targetUserId = userId || user?.id;
+
+  useEffect(() => {
+    if (targetUserId) {
+      fetchUserProfile();
+      fetchUserProducts();
+    }
+  }, [targetUserId]);
+
+  useEffect(() => {
+    if (user && isOwnProfile) {
+      setFormData({
+        phone: user.phone || '',
+        bio: user.bio || ''
+      });
+    }
+  }, [user, isOwnProfile]);
+
+  const fetchUserProfile = async () => {
+    try {
+      if (isOwnProfile && user) {
+        setProfileUser(user);
+      } else {
+        const response = await axios.get(`${API}/users/${targetUserId}`);
+        setProfileUser(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const fetchUserProducts = async () => {
+    try {
+      const response = await axios.get(`${API}/products/user/${targetUserId}`);
+      setUserProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching user products:', error);
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/users/profile`, formData, {
+        withCredentials: true
+      });
+      await checkAuth();
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile');
+    }
+  };
+
+  if (!profileUser) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex items-start space-x-6">
+            {profileUser.picture && (
+              <img
+                src={profileUser.picture}
+                alt={profileUser.name}
+                className="w-24 h-24 rounded-full object-cover"
+              />
+            )}
+            
+            <div className="flex-1">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">{profileUser.name}</h1>
+                  <p className="text-gray-600 mb-2">{profileUser.email}</p>
+                  {profileUser.phone && (
+                    <p className="text-gray-600 mb-2">📞 {profileUser.phone}</p>
+                  )}
+                  {profileUser.bio && (
+                    <p className="text-gray-700 mb-4">{profileUser.bio}</p>
+                  )}
+                </div>
+                
+                {isOwnProfile && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    Edit Profile
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* User's Products */}
+        <div>
+          <h2 className="text-2xl font-bold mb-6">
+            {isOwnProfile ? 'My Products' : `${profileUser.name}'s Products`}
+          </h2>
+          
+          {userProducts.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {userProducts.map(product => (
+                <ProductCard key={product.id} product={product} onBuy={() => {}} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600 text-xl">
+                {isOwnProfile ? 'You haven\'t listed any products yet' : 'No products listed'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Edit Profile Modal */}
+        {isEditing && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold">Edit Profile</h2>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+                
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Bio</label>
+                    <textarea
+                      rows="3"
+                      value={formData.bio}
+                      onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                      placeholder="Tell us about yourself"
+                    />
+                  </div>
+                  
+                  <button
+                    type="submit"
+                    className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+                  >
+                    Update Profile
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// About Page
+const About = () => {
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <h1 className="text-4xl font-bold mb-8 text-center">About thaparMART</h1>
+        
+        <div className="prose prose-lg mx-auto">
+          <p className="text-xl text-gray-600 mb-8 text-center">
+            Connecting students through a trusted marketplace for buying and selling
+          </p>
+          
+          <div className="bg-gray-50 p-8 rounded-lg mb-8">
+            <h2 className="text-2xl font-bold mb-4">Our Mission</h2>
+            <p className="text-gray-700">
+              thaparMART is designed specifically for college students to create a safe, 
+              convenient, and affordable marketplace. We believe in building a community 
+              where students can easily buy and sell items they need for their academic journey.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-8 mb-8">
+            <div>
+              <h3 className="text-xl font-bold mb-3">What We Offer</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li>• Electronics and gadgets</li>
+                <li>• Fashion and clothing</li>
+                <li>• Academic materials and stationery</li>
+                <li>• Study notes and resources</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-xl font-bold mb-3">Why Students Love Us</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li>• Affordable student pricing</li>
+                <li>• Secure Google authentication</li>
+                <li>• Direct contact with sellers</li>
+                <li>• Easy-to-use interface</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Contact Page
+const Contact = () => {
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <h1 className="text-4xl font-bold mb-8 text-center">Contact Us</h1>
+        
+        <div className="grid md:grid-cols-2 gap-12">
+          <div>
+            <h2 className="text-2xl font-bold mb-6">Get in Touch</h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2">Email</h3>
+                <p className="text-gray-700">support@thaparmart.com</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Phone</h3>
+                <p className="text-gray-700">+91 12345 67890</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Address</h3>
+                <p className="text-gray-700">
+                  Thapar Institute of Engineering & Technology<br/>
+                  Patiala, Punjab, India
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h2 className="text-2xl font-bold mb-6">Quick Help</h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2">How to Sell?</h3>
+                <p className="text-gray-700">Login, click "Sell Product" and fill in the details</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">How to Buy?</h3>
+                <p className="text-gray-700">Browse products, click on items you like, and contact the seller</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Safety Tips</h3>
+                <p className="text-gray-700">Always meet in public places and verify products before purchasing</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main App Component
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
+        <AuthProvider>
+          <Navigation />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:userId" element={<Profile />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </div>
   );
