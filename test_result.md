@@ -126,11 +126,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Created user profile endpoints for updating phone, bio, getting user profiles by ID"
+      - working: true
+        agent: "testing"
+        comment: "Tested user profile endpoints - GET /users/{id} returns proper 404 for non-existent users, PUT /users/profile properly requires authentication, profile validation works correctly. All user profile security and functionality verified."
 
   - task: "Product CRUD Operations"
     implemented: true
