@@ -246,12 +246,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Emergent Authentication System"
-    - "Product CRUD Operations"
     - "Authentication Flow"
     - "Product Upload System"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
