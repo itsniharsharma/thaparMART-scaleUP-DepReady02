@@ -6,7 +6,7 @@ Detailed Backend Testing for thaparMART - Focus on critical functionality
 import requests
 import json
 
-BASE_URL = "https://campusbuysell.preview.emergentagent.com/api"
+BASE_URL = "https://payment-verify-8.preview.emergentagent.com/api"
 
 def test_cors_functionality():
     """Test CORS functionality with actual requests"""
@@ -15,7 +15,7 @@ def test_cors_functionality():
     try:
         # Test with Origin header
         headers = {
-            'Origin': 'https://campusbuysell.preview.emergentagent.com',
+            'Origin': 'https://payment-verify-8.preview.emergentagent.com',
             'Content-Type': 'application/json'
         }
         
