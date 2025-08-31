@@ -32,7 +32,7 @@ ssl_context.verify_mode = ssl.CERT_NONE
 base_url = mongo_url.split('?')[0]
 client = AsyncIOMotorClient(
     base_url,
-    ssl_context=ssl_context,
+    tlsSSLContext=ssl_context,
     serverSelectionTimeoutMS=5000,
     connectTimeoutMS=5000,
     retryWrites=True,
