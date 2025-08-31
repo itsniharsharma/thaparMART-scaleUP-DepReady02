@@ -282,10 +282,13 @@ async def create_payment_order(user: User = Depends(get_current_user)):
     
     try:
         # Create Razorpay order for 20 Rs (2000 paise)
+        # Generate short receipt ID (max 40 chars)
+        receipt_id = f"fee_{user.id[:8]}_{str(uuid.uuid4())[:8]}"
+        
         order_data = {
             "amount": 2000,  # 20 Rs in paise
             "currency": "INR",
-            "receipt": f"upload_fee_{user.id}_{uuid.uuid4()}",
+            "receipt": receipt_id,
             "payment_capture": 1
         }
         
