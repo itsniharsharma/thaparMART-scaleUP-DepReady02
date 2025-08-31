@@ -28,7 +28,8 @@ class ThaparMartTester:
             "authentication": {"passed": 0, "failed": 0, "details": []},
             "user_profile": {"passed": 0, "failed": 0, "details": []},
             "product_crud": {"passed": 0, "failed": 0, "details": []},
-            "image_upload": {"passed": 0, "failed": 0, "details": []}
+            "image_upload": {"passed": 0, "failed": 0, "details": []},
+            "payment_integration": {"passed": 0, "failed": 0, "details": []}
         }
     
     def log_result(self, category, test_name, passed, details=""):
