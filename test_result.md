@@ -318,8 +318,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Razorpay Payment Integration Testing"
-    - "MongoDB Atlas SSL Connection Issue (Deferred)"
+    - "Complete Razorpay Payment Integration Testing"
+    - "Product Upload Payment Flow Testing"
+    - "Payment Token Management Testing"
   stuck_tasks: 
     - "Enhanced Profile Management with Mandatory Phone" (MongoDB dependent)
     - "Enhanced Product Detail with Contact Seller" (MongoDB dependent)
