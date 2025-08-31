@@ -34,6 +34,9 @@ s3_client = boto3.client(
 )
 S3_BUCKET_NAME = os.environ['S3_BUCKET_NAME']
 
+# Razorpay configuration
+razorpay_client = razorpay.Client(auth=(os.environ['RAZORPAY_KEY_ID'], os.environ['RAZORPAY_KEY_SECRET']))
+
 # Create the main app without a prefix
 app = FastAPI()
 
