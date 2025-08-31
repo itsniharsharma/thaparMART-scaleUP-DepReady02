@@ -197,6 +197,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Implemented complete Razorpay payment system with order creation, payment verification, and token management. Users must pay ₹20 before uploading products. Added payment endpoints: /api/payment/create-order, /api/payment/verify, /api/payment/tokens"
+      - working: true
+        agent: "main"
+        comment: "Fixed missing setuptools dependency issue. Backend now running successfully with Razorpay integration. Ready for comprehensive testing of payment flow including order creation, payment verification, and product upload with payment tokens."
 
 frontend:
   - task: "Navigation and Routing"
