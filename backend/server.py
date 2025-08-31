@@ -90,6 +90,26 @@ class Session(BaseModel):
     expires_at: datetime
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class PaymentOrder(BaseModel):
+    amount: int  # Amount in paise (20 Rs = 2000 paise)
+    currency: str = "INR"
+    receipt: str
+
+class PaymentToken(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    payment_id: str
+    order_id: str
+    amount: int
+    status: str  # 'created', 'paid', 'used'
+    expires_at: datetime
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PaymentVerification(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+
 # Authentication helpers
 async def upload_image_to_s3(image_content: bytes, filename: str, content_type: str) -> str:
     """Upload image to S3 and return the public URL"""
