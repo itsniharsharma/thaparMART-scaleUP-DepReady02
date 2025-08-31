@@ -213,15 +213,18 @@ frontend:
 
   - task: "Enhanced Profile Management with Mandatory Phone"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Updated profile component to show user's products, make phone number mandatory, display profile completion warnings, and handle seller profile routing"
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: MongoDB Atlas SSL connection failure preventing profile functionality. Backend logs show 'SSL handshake failed' errors for all MongoDB Atlas shards. Profile page stuck in loading state due to database connectivity issues. Frontend code structure appears correct but cannot test enhanced features without backend database access."
 
   - task: "Enhanced Product Upload with Multiple S3 Images"
     implemented: true
