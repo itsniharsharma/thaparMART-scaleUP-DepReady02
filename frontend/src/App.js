@@ -27,8 +27,11 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = (redirectUrl = window.location.href) => {
-    const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  const login = (redirectUrl) => {
+    // Use current frontend URL as redirect target
+    const currentUrl = redirectUrl || window.location.origin;
+    const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(currentUrl)}`;
+    console.log('Redirecting to auth with redirect URL:', currentUrl);
     window.location.href = authUrl;
   };
 
