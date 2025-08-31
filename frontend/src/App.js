@@ -443,10 +443,12 @@ const SellProductModal = ({ onClose, onSuccess }) => {
   });
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
       const formDataToSend = new FormData();
@@ -469,7 +471,11 @@ const SellProductModal = ({ onClose, onSuccess }) => {
       onSuccess();
     } catch (error) {
       console.error('Error creating product:', error);
-      alert('Failed to create product');
+      if (error.response?.status === 400 && error.response?.data?.detail?.includes('phone')) {
+        setError('Please complete your profile with phone number before creating products.');
+      } else {
+        setError('Failed to create product. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -488,6 +494,12 @@ const SellProductModal = ({ onClose, onSuccess }) => {
               ×
             </button>
           </div>
+          
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -540,7 +552,7 @@ const SellProductModal = ({ onClose, onSuccess }) => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Product Images</label>
+              <label className="block text-sm font-medium mb-1">Product Images (Multiple allowed)</label>
               <input
                 type="file"
                 accept="image/*"
@@ -548,6 +560,7 @@ const SellProductModal = ({ onClose, onSuccess }) => {
                 onChange={(e) => setImages(Array.from(e.target.files))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
+              <p className="text-sm text-gray-500 mt-1">You can upload multiple images. Max 10MB per image.</p>
             </div>
             
             <button
