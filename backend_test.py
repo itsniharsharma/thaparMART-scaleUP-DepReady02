@@ -52,6 +52,124 @@ class ThaparMartTester:
         img_bytes.seek(0)
         return img_bytes
     
+    def test_payment_integration(self):
+        """Test Razorpay Payment Integration"""
+        print("\n💳 Testing Razorpay Payment Integration...")
+        
+        # Test 1: Create payment order without authentication
+        try:
+            response = self.session.post(f"{BASE_URL}/payment/create-order")
+            if response.status_code == 401:
+                self.log_result("payment_integration", "Payment Order Security", True, 
+                              "Properly requires authentication for payment order creation")
+            else:
+                self.log_result("payment_integration", "Payment Order Security", False, 
+                              f"Should require auth, got: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Payment Order Security", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 2: Payment verification without authentication
+        try:
+            verification_data = {
+                "razorpay_order_id": "order_test123",
+                "razorpay_payment_id": "pay_test123", 
+                "razorpay_signature": "test_signature"
+            }
+            response = self.session.post(f"{BASE_URL}/payment/verify", json=verification_data)
+            if response.status_code == 401:
+                self.log_result("payment_integration", "Payment Verification Security", True, 
+                              "Properly requires authentication for payment verification")
+            else:
+                self.log_result("payment_integration", "Payment Verification Security", False, 
+                              f"Should require auth, got: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Payment Verification Security", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 3: Get payment tokens without authentication
+        try:
+            response = self.session.get(f"{BASE_URL}/payment/tokens")
+            if response.status_code == 401:
+                self.log_result("payment_integration", "Payment Tokens Security", True, 
+                              "Properly requires authentication for payment tokens")
+            else:
+                self.log_result("payment_integration", "Payment Tokens Security", False, 
+                              f"Should require auth, got: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Payment Tokens Security", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 4: Payment endpoint structure validation
+        try:
+            # Test with invalid verification data
+            invalid_data = {"invalid_field": "test"}
+            response = self.session.post(f"{BASE_URL}/payment/verify", json=invalid_data)
+            if response.status_code in [401, 422]:
+                self.log_result("payment_integration", "Payment Validation", True, 
+                              f"Proper validation/auth check: {response.status_code}")
+            else:
+                self.log_result("payment_integration", "Payment Validation", False, 
+                              f"Unexpected response: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Payment Validation", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 5: Payment order endpoint structure
+        try:
+            response = self.session.post(f"{BASE_URL}/payment/create-order", json={"test": "data"})
+            # Should return 401 (auth required) regardless of payload
+            if response.status_code == 401:
+                self.log_result("payment_integration", "Payment Order Endpoint", True, 
+                              "Payment order endpoint properly secured")
+            else:
+                self.log_result("payment_integration", "Payment Order Endpoint", False, 
+                              f"Unexpected status: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Payment Order Endpoint", False, 
+                          f"Error: {str(e)}")
+    
+    def test_enhanced_product_creation(self):
+        """Test Enhanced Product Creation with Payment Requirements"""
+        print("\n📦💳 Testing Enhanced Product Creation (Payment Required)...")
+        
+        # Test 1: Product creation without authentication (should fail)
+        try:
+            product_data = {
+                "title": "iPhone 15 Pro Max",
+                "description": "Brand new, sealed box",
+                "price": 120000.0,
+                "category": "Electronics"
+            }
+            response = self.session.post(f"{BASE_URL}/products", data=product_data)
+            
+            if response.status_code == 401:
+                self.log_result("product_crud", "Enhanced Product Creation Security", True, 
+                              "Properly requires authentication for product creation")
+            else:
+                self.log_result("product_crud", "Enhanced Product Creation Security", False, 
+                              f"Should require auth, got: {response.status_code}")
+        except Exception as e:
+            self.log_result("product_crud", "Enhanced Product Creation Security", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 2: Product creation endpoint structure with payment requirement
+        try:
+            # Test endpoint response structure
+            response = self.session.post(f"{BASE_URL}/products", data={"invalid": "data"})
+            
+            # Should return 401 (auth) or 422 (validation)
+            if response.status_code in [401, 422]:
+                self.log_result("product_crud", "Enhanced Product Endpoint Structure", True, 
+                              f"Endpoint properly validates requests: {response.status_code}")
+            else:
+                self.log_result("product_crud", "Enhanced Product Endpoint Structure", False, 
+                              f"Unexpected response: {response.status_code}")
+        except Exception as e:
+            self.log_result("product_crud", "Enhanced Product Endpoint Structure", False, 
+                          f"Error: {str(e)}")
+    
+    
     def test_authentication_system(self):
         """Test Emergent Authentication System"""
         print("\n🔐 Testing Authentication System...")
