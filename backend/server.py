@@ -308,7 +308,7 @@ async def get_product(product_id: str):
 async def get_user_products(user_id: str):
     """Get all products by a specific user"""
     products = await db.products.find({"seller_id": user_id}).sort("created_at", -1).to_list(length=None)
-    return [Product(**products) for product in products]
+    return [Product(**product) for product in products]
 
 @api_router.put("/products/{product_id}/sold")
 async def mark_product_sold(
