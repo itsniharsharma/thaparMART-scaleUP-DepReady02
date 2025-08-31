@@ -365,7 +365,7 @@ const ProductCard = ({ product, onBuy }) => {
 const ProductDetailModal = ({ product, onClose }) => {
   const navigate = useNavigate();
 
-  const handleBuyClick = () => {
+  const handleContactSeller = () => {
     onClose();
     navigate(`/profile/${product.seller_id}`);
   };
@@ -384,13 +384,19 @@ const ProductDetailModal = ({ product, onClose }) => {
             </button>
           </div>
           
+          {/* Image Gallery */}
           {product.images.length > 0 && (
             <div className="mb-4">
-              <img 
-                src={product.images[0]} 
-                alt={product.title}
-                className="w-full h-64 object-cover rounded-lg"
-              />
+              <div className="grid grid-cols-1 gap-2">
+                {product.images.map((image, index) => (
+                  <img 
+                    key={index}
+                    src={image} 
+                    alt={`${product.title} ${index + 1}`}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                ))}
+              </div>
             </div>
           )}
           
@@ -409,10 +415,13 @@ const ProductDetailModal = ({ product, onClose }) => {
               <h3 className="font-semibold mb-2">Seller Information</h3>
               <p className="text-gray-700">Name: {product.seller_name}</p>
               <p className="text-gray-700">Email: {product.seller_email}</p>
+              {product.seller_phone && (
+                <p className="text-gray-700">Phone: {product.seller_phone}</p>
+              )}
             </div>
             
             <button
-              onClick={handleBuyClick}
+              onClick={handleContactSeller}
               className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
             >
               Contact Seller
