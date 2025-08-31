@@ -484,8 +484,10 @@ class ThaparMartTester:
         # Run all test suites
         self.test_api_endpoints_general()
         self.test_authentication_system()
+        self.test_payment_integration()
         self.test_user_profile_management()
         self.test_product_crud_operations()
+        self.test_enhanced_product_creation()
         self.test_image_upload_system()
         
         # Print summary
