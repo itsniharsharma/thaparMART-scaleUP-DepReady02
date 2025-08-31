@@ -241,6 +241,12 @@ async def get_user_profile(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
     return User(**user)
 
+@api_router.get("/users/profile/complete")
+async def check_profile_complete(user: User = Depends(get_current_user)):
+    """Check if user profile is complete (has phone number)"""
+    is_complete = bool(user.phone and user.phone.strip())
+    return {"complete": is_complete, "missing_fields": [] if is_complete else ["phone"]}
+
 # Product routes
 @api_router.post("/products", response_model=Product)
 async def create_product(
