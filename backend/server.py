@@ -159,13 +159,18 @@ async def authenticate_session(session_id: str, response: Response):
     existing_user = await db.users.find_one({"email": user_data["email"]})
     
     if not existing_user:
-        # Create new user
-        user = User(
-            email=user_data["email"],
-            name=user_data["name"],
-            picture=user_data.get("picture")
-        )
-        await db.users.insert_one(user.dict())
+        # Create new user with empty phone - they'll need to complete profile
+        user_dict = {
+            "id": str(uuid.uuid4()),
+            "email": user_data["email"],
+            "name": user_data["name"],
+            "picture": user_data.get("picture"),
+            "phone": "",  # Empty phone - needs to be completed
+            "bio": None,
+            "created_at": datetime.now(timezone.utc)
+        }
+        await db.users.insert_one(user_dict)
+        user = User(**user_dict)
     else:
         user = User(**existing_user)
     
