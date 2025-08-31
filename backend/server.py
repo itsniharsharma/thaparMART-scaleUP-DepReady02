@@ -24,6 +24,15 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# AWS S3 configuration
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+    aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
+    region_name=os.environ['AWS_REGION']
+)
+S3_BUCKET_NAME = os.environ['S3_BUCKET_NAME']
+
 # Create the main app without a prefix
 app = FastAPI()
 
