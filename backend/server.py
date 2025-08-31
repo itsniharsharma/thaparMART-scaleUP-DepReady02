@@ -271,6 +271,114 @@ async def check_profile_complete(user: User = Depends(get_current_user)):
     is_complete = bool(user.phone and user.phone.strip())
     return {"complete": is_complete, "missing_fields": [] if is_complete else ["phone"]}
 
+# Payment routes
+@api_router.post("/payment/create-order")
+async def create_payment_order(user: User = Depends(get_current_user)):
+    """Create a Razorpay order for product upload payment (20 Rs)"""
+    
+    # Check if user has completed profile
+    if not user.phone or user.phone.strip() == "":
+        raise HTTPException(status_code=400, detail="Please complete your profile with phone number first")
+    
+    try:
+        # Create Razorpay order for 20 Rs (2000 paise)
+        order_data = {
+            "amount": 2000,  # 20 Rs in paise
+            "currency": "INR",
+            "receipt": f"upload_fee_{user.id}_{uuid.uuid4()}",
+            "payment_capture": 1
+        }
+        
+        razorpay_order = razorpay_client.order.create(order_data)
+        
+        # Store payment token in database
+        payment_token = PaymentToken(
+            user_id=user.id,
+            payment_id="",  # Will be updated after successful payment
+            order_id=razorpay_order["id"],
+            amount=2000,
+            status="created",
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1)  # 1 hour expiry
+        )
+        
+        await db.payment_tokens.insert_one(payment_token.dict())
+        
+        return {
+            "order_id": razorpay_order["id"],
+            "amount": razorpay_order["amount"],
+            "currency": razorpay_order["currency"],
+            "key": os.environ['RAZORPAY_KEY_ID']
+        }
+        
+    except Exception as e:
+        logging.error(f"Failed to create Razorpay order: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create payment order")
+
+@api_router.post("/payment/verify")
+async def verify_payment(
+    verification: PaymentVerification,
+    user: User = Depends(get_current_user)
+):
+    """Verify payment and activate upload token"""
+    
+    try:
+        # Verify payment signature
+        razorpay_client.utility.verify_payment_signature({
+            'razorpay_order_id': verification.razorpay_order_id,
+            'razorpay_payment_id': verification.razorpay_payment_id,
+            'razorpay_signature': verification.razorpay_signature
+        })
+        
+        # Update payment token status
+        await db.payment_tokens.update_one(
+            {
+                "user_id": user.id,
+                "order_id": verification.razorpay_order_id,
+                "status": "created"
+            },
+            {
+                "$set": {
+                    "payment_id": verification.razorpay_payment_id,
+                    "status": "paid"
+                }
+            }
+        )
+        
+        return {"status": "success", "message": "Payment verified successfully. You can now upload products!"}
+        
+    except Exception as e:
+        logging.error(f"Payment verification failed: {e}")
+        raise HTTPException(status_code=400, detail="Payment verification failed")
+
+@api_router.get("/payment/tokens")
+async def get_user_payment_tokens(user: User = Depends(get_current_user)):
+    """Get user's payment tokens"""
+    
+    tokens = await db.payment_tokens.find({
+        "user_id": user.id,
+        "status": "paid",
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    }).sort("created_at", -1).to_list(length=None)
+    
+    return [PaymentToken(**token) for token in tokens]
+
+async def check_valid_upload_token(user: User = Depends(get_current_user)):
+    """Check if user has a valid upload token"""
+    
+    valid_token = await db.payment_tokens.find_one({
+        "user_id": user.id,
+        "status": "paid",
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    })
+    
+    if not valid_token:
+        raise HTTPException(
+            status_code=402, 
+            detail="Payment required. Please pay ₹20 to upload products."
+        )
+    
+    return valid_token
+
 # Product routes
 @api_router.post("/products", response_model=Product)
 async def create_product(
