@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Build a full-fledged end-to-end OLX website for college called thaparMART where students can upload products, create profiles, and buy/sell items. Features include: Google authentication, profile management with pics/phone/bio, product upload in 4 categories (Electronics, Clothes, Stationery, Notes), landing page with 5 sections, navigation (Home, thaparMART, About, Profile, Contact), product cards with detail views, category filtering, and black & white theme."
+user_problem_statement: "Enhanced thaparMART with real-world scaling features: 1) Show all user's products in profile page 2) Allow multiple image uploads to Amazon S3 3) Store product info with seller's phone number in MongoDB Atlas 4) Make phone number mandatory for profile completion 5) Contact seller redirects to seller's profile 6) Scale for real college use with MongoDB Atlas and S3 integration"
 
 backend:
   - task: "Emergent Authentication System"
