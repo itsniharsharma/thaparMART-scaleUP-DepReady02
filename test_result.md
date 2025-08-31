@@ -284,7 +284,10 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Enhanced Profile Management with Mandatory Phone"
+    - "Enhanced Product Upload with Multiple S3 Images"
+    - "Enhanced Product Detail with Contact Seller"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
