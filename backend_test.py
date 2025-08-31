@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive Backend Testing for thaparMART
-Tests authentication, product CRUD, user profiles, and image upload functionality
+Tests authentication, product CRUD, user profiles, image upload, and Razorpay payment integration
 """
 
 import requests
@@ -11,9 +11,11 @@ import io
 from PIL import Image
 import time
 import uuid
+import hashlib
+import hmac
 
 # Configuration
-BASE_URL = "https://campusbuysell.preview.emergentagent.com/api"
+BASE_URL = "http://localhost:8001/api"
 TEST_SESSION_ID = "test_session_" + str(uuid.uuid4())
 
 class ThaparMartTester:
