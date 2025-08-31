@@ -348,7 +348,7 @@ class ThaparMartTester:
             self.log_result("product_crud", "Get Non-existent Product", False, 
                           f"Error: {str(e)}")
         
-        # Test 5: Create product without authentication
+        # Test 5: Create product without authentication (should require payment token)
         try:
             product_data = {
                 "title": "iPhone 13 Pro",
@@ -361,9 +361,12 @@ class ThaparMartTester:
             if response.status_code == 401:
                 self.log_result("product_crud", "Product Creation Security", True, 
                               "Properly requires authentication for product creation")
+            elif response.status_code == 402:
+                self.log_result("product_crud", "Product Creation Payment Requirement", True, 
+                              "Properly requires payment token for product creation")
             else:
                 self.log_result("product_crud", "Product Creation Security", False, 
-                              f"Should require auth, got: {response.status_code}")
+                              f"Should require auth/payment, got: {response.status_code}")
         except Exception as e:
             self.log_result("product_crud", "Product Creation Security", False, 
                           f"Error: {str(e)}")
