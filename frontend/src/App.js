@@ -580,7 +580,8 @@ const SellProductModal = ({ onClose, onSuccess }) => {
 // Profile Component
 const Profile = () => {
   const { user, checkAuth } = useAuth();
-  const { userId } = useLocation().pathname.split('/').pop();
+  const { pathname } = useLocation();
+  const userId = pathname.split('/')[2]; // Extract userId from path like /profile/123
   const [profileUser, setProfileUser] = useState(null);
   const [userProducts, setUserProducts] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -588,6 +589,7 @@ const Profile = () => {
     phone: '',
     bio: ''
   });
+  const [showProfileIncomplete, setShowProfileIncomplete] = useState(false);
 
   const isOwnProfile = !userId || userId === user?.id;
   const targetUserId = userId || user?.id;
@@ -605,6 +607,10 @@ const Profile = () => {
         phone: user.phone || '',
         bio: user.bio || ''
       });
+      // Check if profile is incomplete
+      if (!user.phone || user.phone.trim() === '') {
+        setShowProfileIncomplete(true);
+      }
     }
   }, [user, isOwnProfile]);
 
@@ -632,12 +638,20 @@ const Profile = () => {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    
+    // Validate phone number is provided
+    if (!formData.phone || formData.phone.trim() === '') {
+      alert('Phone number is required to complete your profile.');
+      return;
+    }
+    
     try {
       await axios.put(`${API}/users/profile`, formData, {
         withCredentials: true
       });
       await checkAuth();
       setIsEditing(false);
+      setShowProfileIncomplete(false);
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('Failed to update profile');
@@ -651,6 +665,23 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Profile Incomplete Warning */}
+        {showProfileIncomplete && isOwnProfile && (
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <strong>Complete your profile!</strong> Add your phone number to start selling products.
+              </div>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700"
+              >
+                Complete Now
+              </button>
+            </div>
+          </div>
+        )}
+        
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex items-start space-x-6">
             {profileUser.picture && (
@@ -666,8 +697,10 @@ const Profile = () => {
                 <div>
                   <h1 className="text-3xl font-bold mb-2">{profileUser.name}</h1>
                   <p className="text-gray-600 mb-2">{profileUser.email}</p>
-                  {profileUser.phone && (
+                  {profileUser.phone && profileUser.phone.trim() !== '' ? (
                     <p className="text-gray-600 mb-2">📞 {profileUser.phone}</p>
+                  ) : isOwnProfile && (
+                    <p className="text-red-600 mb-2">📞 Phone number required</p>
                   )}
                   {profileUser.bio && (
                     <p className="text-gray-700 mb-4">{profileUser.bio}</p>
@@ -704,6 +737,11 @@ const Profile = () => {
               <p className="text-gray-600 text-xl">
                 {isOwnProfile ? 'You haven\'t listed any products yet' : 'No products listed'}
               </p>
+              {isOwnProfile && (
+                <p className="text-gray-500 mt-2">
+                  Complete your profile and start selling!
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -725,14 +763,18 @@ const Profile = () => {
                 
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Phone Number</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="tel"
+                      required
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
                       placeholder="Enter your phone number"
                     />
+                    <p className="text-sm text-gray-500 mt-1">Required to sell products and for buyers to contact you.</p>
                   </div>
                   
                   <div>
