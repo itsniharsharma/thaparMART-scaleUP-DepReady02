@@ -387,9 +387,10 @@ async def create_product(
     price: float = Form(...),
     category: str = Form(...),
     images: List[UploadFile] = File([]),
-    user: User = Depends(get_current_user)
+    user: User = Depends(get_current_user),
+    payment_token: dict = Depends(check_valid_upload_token)
 ):
-    """Create a new product"""
+    """Create a new product (requires payment token)"""
     
     # Check if user has completed their profile (phone number required)
     if not user.phone or user.phone.strip() == "":
@@ -422,6 +423,13 @@ async def create_product(
     )
     
     await db.products.insert_one(product.dict())
+    
+    # Mark payment token as used
+    await db.payment_tokens.update_one(
+        {"_id": payment_token["_id"]},
+        {"$set": {"status": "used"}}
+    )
+    
     return product
 
 @api_router.get("/products", response_model=List[Product])
