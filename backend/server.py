@@ -45,7 +45,7 @@ class User(BaseModel):
     email: str
     name: str
     picture: Optional[str] = None
-    phone: Optional[str] = None
+    phone: str  # Now mandatory
     bio: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -55,7 +55,7 @@ class UserCreate(BaseModel):
     picture: Optional[str] = None
 
 class UserUpdate(BaseModel):
-    phone: Optional[str] = None
+    phone: str  # Now mandatory
     bio: Optional[str] = None
     picture: Optional[str] = None
 
