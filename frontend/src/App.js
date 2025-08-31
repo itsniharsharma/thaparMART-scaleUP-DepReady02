@@ -434,8 +434,12 @@ const ProductDetailModal = ({ product, onClose }) => {
   );
 };
 
-// Sell Product Modal
+// Sell Product Modal with Payment Integration
 const SellProductModal = ({ onClose, onSuccess }) => {
+  const [Razorpay] = useRazorpay();
+  const [step, setStep] = useState('payment'); // 'payment' or 'form'
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [hasValidToken, setHasValidToken] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -445,6 +449,88 @@ const SellProductModal = ({ onClose, onSuccess }) => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Check if user has valid payment token on mount
+  useEffect(() => {
+    checkPaymentTokens();
+  }, []);
+
+  const checkPaymentTokens = async () => {
+    try {
+      const response = await axios.get(`${API}/payment/tokens`, {
+        withCredentials: true
+      });
+      if (response.data.length > 0) {
+        setHasValidToken(true);
+        setStep('form');
+      }
+    } catch (error) {
+      console.error('Error checking payment tokens:', error);
+      setHasValidToken(false);
+    }
+  };
+
+  const handlePayment = async () => {
+    setPaymentLoading(true);
+    setError('');
+
+    try {
+      // Create Razorpay order
+      const orderResponse = await axios.post(`${API}/payment/create-order`, {}, {
+        withCredentials: true
+      });
+
+      const options = {
+        key: orderResponse.data.key,
+        amount: orderResponse.data.amount,
+        currency: orderResponse.data.currency,
+        order_id: orderResponse.data.order_id,
+        name: "thaparMART",
+        description: "Product Upload Fee",
+        image: "/logo192.png",
+        handler: async (response) => {
+          try {
+            // Verify payment
+            await axios.post(`${API}/payment/verify`, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            }, {
+              withCredentials: true
+            });
+
+            setHasValidToken(true);
+            setStep('form');
+            setError('');
+          } catch (error) {
+            console.error('Payment verification failed:', error);
+            setError('Payment verification failed. Please try again.');
+          }
+        },
+        prefill: {
+          name: "Student",
+          email: "student@thapar.edu",
+          contact: "9000000000"
+        },
+        theme: {
+          color: "#000000"
+        }
+      };
+
+      const razorpayInstance = new Razorpay(options);
+      razorpayInstance.open();
+      
+    } catch (error) {
+      console.error('Error creating payment order:', error);
+      if (error.response?.status === 400 && error.response?.data?.detail?.includes('phone')) {
+        setError('Please complete your profile with phone number first.');
+      } else {
+        setError('Failed to create payment order. Please try again.');
+      }
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -472,7 +558,11 @@ const SellProductModal = ({ onClose, onSuccess }) => {
       onSuccess();
     } catch (error) {
       console.error('Error creating product:', error);
-      if (error.response?.status === 400 && error.response?.data?.detail?.includes('phone')) {
+      if (error.response?.status === 402) {
+        setError('Payment required. Please pay ₹20 to upload products.');
+        setStep('payment');
+        setHasValidToken(false);
+      } else if (error.response?.status === 400 && error.response?.data?.detail?.includes('phone')) {
         setError('Please complete your profile with phone number before creating products.');
       } else {
         setError('Failed to create product. Please try again.');
@@ -487,7 +577,9 @@ const SellProductModal = ({ onClose, onSuccess }) => {
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Sell Product</h2>
+            <h2 className="text-2xl font-bold">
+              {step === 'payment' ? 'Payment Required' : 'Sell Product'}
+            </h2>
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -501,77 +593,112 @@ const SellProductModal = ({ onClose, onSuccess }) => {
               {error}
             </div>
           )}
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Product Title</label>
-              <input
-                type="text"
-                required
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+
+          {step === 'payment' && (
+            <div className="text-center">
+              <div className="mb-6">
+                <div className="text-6xl mb-4">💳</div>
+                <h3 className="text-xl font-semibold mb-2">Upload Fee Required</h3>
+                <p className="text-gray-600 mb-4">
+                  To upload products on thaparMART, you need to pay a one-time fee of ₹20. 
+                  This helps us maintain the platform and ensure quality listings.
+                </p>
+                <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                  <p className="text-2xl font-bold text-green-600">₹20</p>
+                  <p className="text-sm text-gray-600">One-time payment for product uploads</p>
+                </div>
+              </div>
+              
+              <button
+                onClick={handlePayment}
+                disabled={paymentLoading}
+                className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors disabled:bg-gray-400"
               >
-                <option value="Electronics">Electronics</option>
-                <option value="Clothes">Clothes</option>
-                <option value="Stationery">Stationery</option>
-                <option value="Notes">Notes</option>
-              </select>
+                {paymentLoading ? 'Processing...' : 'Pay ₹20 & Continue'}
+              </button>
+              
+              <p className="text-xs text-gray-500 mt-3">
+                Secure payment powered by Razorpay. Supports UPI, Cards, and Net Banking.
+              </p>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">Price (₹)</label>
-              <input
-                type="number"
-                required
-                min="0"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                required
-                rows="3"
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">Product Images (Multiple allowed)</label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => setImages(Array.from(e.target.files))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-              <p className="text-sm text-gray-500 mt-1">You can upload multiple images. Max 10MB per image.</p>
-            </div>
-            
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors disabled:bg-gray-400"
-            >
-              {loading ? 'Creating...' : 'Create Product'}
-            </button>
-          </form>
+          )}
+
+          {step === 'form' && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                ✅ Payment verified! You can now upload your product.
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Product Title</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                >
+                  <option value="Electronics">Electronics</option>
+                  <option value="Clothes">Clothes</option>
+                  <option value="Stationery">Stationery</option>
+                  <option value="Notes">Notes</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Price (₹)</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({...formData, price: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  required
+                  rows="3"
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Product Images (Multiple allowed)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => setImages(Array.from(e.target.files))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+                <p className="text-sm text-gray-500 mt-1">You can upload multiple images. Max 10MB per image.</p>
+              </div>
+              
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+              >
+                {loading ? 'Creating...' : 'Create Product'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>
