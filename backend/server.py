@@ -87,6 +87,28 @@ class Session(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Authentication helpers
+async def upload_image_to_s3(image_content: bytes, filename: str, content_type: str) -> str:
+    """Upload image to S3 and return the public URL"""
+    try:
+        # Generate unique filename
+        unique_filename = f"products/{uuid.uuid4()}_{filename}"
+        
+        # Upload to S3
+        s3_client.put_object(
+            Bucket=S3_BUCKET_NAME,
+            Key=unique_filename,
+            Body=image_content,
+            ContentType=content_type,
+            ACL='public-read'  # Make images publicly accessible
+        )
+        
+        # Return public URL
+        return f"https://{S3_BUCKET_NAME}.s3.{os.environ['AWS_REGION']}.amazonaws.com/{unique_filename}"
+    
+    except ClientError as e:
+        logging.error(f"Failed to upload image to S3: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload image")
+
 async def get_current_user(request: Request):
     # Check for session token in cookies first
     session_token = request.cookies.get('session_token')
