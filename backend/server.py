@@ -19,26 +19,9 @@ from botocore.exceptions import ClientError
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection with SSL configuration
+# MongoDB connection
 mongo_url = os.environ['MONGO_URL']
-import ssl
-
-# Create SSL context that bypasses certificate verification
-ssl_context = ssl.create_default_context()
-ssl_context.check_hostname = False
-ssl_context.verify_mode = ssl.CERT_NONE
-
-# Remove SSL parameters from URL and apply via client options
-base_url = mongo_url.split('?')[0]
-client = AsyncIOMotorClient(
-    base_url,
-    tlsSSLContext=ssl_context,
-    serverSelectionTimeoutMS=5000,
-    connectTimeoutMS=5000,
-    retryWrites=True,
-    w='majority',
-    appName='thaparMARTclus'
-)
+client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # AWS S3 configuration
