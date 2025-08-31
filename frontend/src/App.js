@@ -497,6 +497,16 @@ const SellProductModal = ({ onClose, onSuccess }) => {
     setPaymentLoading(true);
     setError('');
 
+    // Debug Razorpay availability
+    console.log('Razorpay from hook:', Razorpay);
+    console.log('Type of Razorpay:', typeof Razorpay);
+    
+    if (!Razorpay) {
+      setError('Razorpay is not available. Please refresh the page and try again.');
+      setPaymentLoading(false);
+      return;
+    }
+
     try {
       // Create Razorpay order
       const orderResponse = await axios.post(`${API}/payment/create-order`, {}, {
@@ -540,6 +550,7 @@ const SellProductModal = ({ onClose, onSuccess }) => {
         }
       };
 
+      console.log('Creating Razorpay instance with options:', options);
       const razorpayInstance = new Razorpay(options);
       razorpayInstance.open();
       
