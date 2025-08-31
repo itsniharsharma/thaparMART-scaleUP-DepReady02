@@ -459,7 +459,7 @@ const ProductDetailModal = ({ product, onClose }) => {
 
 // Sell Product Modal with Payment Integration
 const SellProductModal = ({ onClose, onSuccess }) => {
-  const [Razorpay] = useRazorpay();
+  const { Razorpay } = useRazorpay();
   const [step, setStep] = useState('payment'); // 'payment' or 'form'
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [hasValidToken, setHasValidToken] = useState(false);
