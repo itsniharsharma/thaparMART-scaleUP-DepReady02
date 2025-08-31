@@ -15,7 +15,7 @@ import hashlib
 import hmac
 
 # Configuration
-BASE_URL = "https://payment-verify-8.preview.emergentagent.com/api"
+BASE_URL = "http://localhost:8001/api"
 TEST_SESSION_ID = "test_session_" + str(uuid.uuid4())
 
 class ThaparMartTester:
