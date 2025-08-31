@@ -65,10 +65,11 @@ class Product(BaseModel):
     description: str
     price: float
     category: str  # Electronics, Clothes, Stationery, Notes
-    images: List[str] = []  # base64 encoded images
+    images: List[str] = []  # S3 image URLs
     seller_id: str
     seller_name: str
     seller_email: str
+    seller_phone: str  # Added seller phone number
     is_sold: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
