@@ -164,7 +164,7 @@ async def get_current_user(request: Request):
 
 # Authentication routes
 @api_router.post("/auth/session", response_model=User)
-async def authenticate_session(session_id: str, response: Response):
+async def authenticate_session(session_id: str = Form(...), response: Response = Response()):
     """Exchange Emergent session ID for user data and create local session"""
     
     # Call Emergent auth API
