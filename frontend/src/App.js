@@ -44,23 +44,43 @@ const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Check for session_id in URL fragment first
+    // Check for session_id in URL - could be in fragment (#) or query (?)
+    const urlParams = new URLSearchParams(window.location.search);
     const fragment = window.location.hash;
-    if (fragment.includes('session_id=')) {
-      const sessionId = fragment.split('session_id=')[1].split('&')[0];
+    
+    let sessionId = null;
+    
+    // Check query parameters first
+    if (urlParams.has('session_id')) {
+      sessionId = urlParams.get('session_id');
+    }
+    // Check URL fragment as fallback
+    else if (fragment.includes('session_id=')) {
+      sessionId = fragment.split('session_id=')[1].split('&')[0];
+    }
+    
+    if (sessionId) {
+      console.log('Found session_id:', sessionId);
       
-      // Exchange session ID for user data
-      axios.post(`${API}/auth/session?session_id=${sessionId}`, {}, {
-        withCredentials: true
+      // Exchange session ID for user data - send as form data
+      const formData = new FormData();
+      formData.append('session_id', sessionId);
+      
+      axios.post(`${API}/auth/session`, formData, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       }).then(response => {
+        console.log('Session authentication successful:', response.data);
         setUser(response.data);
         setLoading(false);
         // Clean up URL
-        window.location.hash = '';
-        // Redirect to profile page
-        window.location.href = '/profile';
+        window.history.replaceState({}, document.title, window.location.pathname);
+        // Don't redirect automatically, let user navigate
       }).catch(error => {
         console.error('Session authentication failed:', error);
+        console.error('Error details:', error.response?.data);
         setLoading(false);
       });
     } else {
