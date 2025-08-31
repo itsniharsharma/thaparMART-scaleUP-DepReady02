@@ -253,26 +253,34 @@ async def create_product(
 ):
     """Create a new product"""
     
+    # Check if user has completed their profile (phone number required)
+    if not user.phone or user.phone.strip() == "":
+        raise HTTPException(status_code=400, detail="Please complete your profile with phone number before creating products")
+    
     if category not in ["Electronics", "Clothes", "Stationery", "Notes"]:
         raise HTTPException(status_code=400, detail="Invalid category")
     
-    # Process images
-    image_data = []
+    # Process images - upload to S3
+    image_urls = []
     for image in images:
+        if image.size > 10 * 1024 * 1024:  # 10MB limit
+            raise HTTPException(status_code=400, detail=f"Image {image.filename} is too large. Max size is 10MB")
+        
         content = await image.read()
-        # Convert to base64
-        base64_image = base64.b64encode(content).decode('utf-8')
-        image_data.append(f"data:{image.content_type};base64,{base64_image}")
+        # Upload to S3 and get URL
+        image_url = await upload_image_to_s3(content, image.filename, image.content_type)
+        image_urls.append(image_url)
     
     product = Product(
         title=title,
         description=description,
         price=price,
         category=category,
-        images=image_data,
+        images=image_urls,  # Store S3 URLs instead of base64
         seller_id=user.id,
         seller_name=user.name,
-        seller_email=user.email
+        seller_email=user.email,
+        seller_phone=user.phone  # Include seller phone
     )
     
     await db.products.insert_one(product.dict())
