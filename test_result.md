@@ -211,6 +211,42 @@ frontend:
         agent: "testing"
         comment: "Tested authentication flow - Login/Register button visible for unauthenticated users, successfully redirects to Emergent auth portal (https://auth.emergentagent.com/). Profile page properly handles unauthenticated access with loading state. 401 errors on /api/auth/me are expected and correct for unauthenticated users. Authentication security working as designed."
 
+  - task: "Enhanced Profile Management with Mandatory Phone"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Updated profile component to show user's products, make phone number mandatory, display profile completion warnings, and handle seller profile routing"
+
+  - task: "Enhanced Product Upload with Multiple S3 Images"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Updated product creation modal to support multiple image uploads to S3, display profile completion errors, and handle phone number requirements"
+
+  - task: "Enhanced Product Detail with Contact Seller"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Updated product detail modal to display all product images, show seller phone number, and redirect to seller profile on contact"
+
   - task: "Landing Page with 5 Sections"
     implemented: true
     working: true
@@ -240,36 +276,6 @@ frontend:
       - working: true
         agent: "testing"
         comment: "Tested marketplace functionality - Category dropdown visible with all options (All Categories, Electronics, Clothes, Stationery, Notes). Category filtering works correctly for all categories, shows 'No products found' message as expected for empty database. Browse Products button successfully navigates to marketplace. Marketplace page loads correctly with proper layout."
-
-  - task: "Product Upload System"
-    implemented: true
-    working: true
-    file: "/app/frontend/src/App.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "Created sell product modal with form for title, category, price, description, and multi-image upload"
-      - working: true
-        agent: "testing"
-        comment: "Tested product upload system security - Sell Product button correctly hidden for unauthenticated users, ensuring proper authentication requirement. System properly secured - only authenticated users can access product creation functionality. Authentication-based access control working as designed."
-
-  - task: "User Profiles"
-    implemented: true
-    working: true
-    file: "/app/frontend/src/App.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "Built profile pages showing user info, products, edit profile functionality with phone and bio"
-      - working: true
-        agent: "testing"
-        comment: "Tested user profile access - Profile page properly handles unauthenticated users by showing loading state and requiring authentication. Profile access control working correctly, ensuring users must be authenticated to view/edit profiles."
 
 metadata:
   created_by: "main_agent"
