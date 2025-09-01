@@ -8,7 +8,7 @@ import requests
 import json
 
 # Configuration - Use production URL from frontend/.env
-BASE_URL = "https://login-system-16.preview.emergentagent.com/api"
+BASE_URL = "https://payment-flow-fix-6.preview.emergentagent.com/api"
 
 class LoginValidationTester:
     def __init__(self):
