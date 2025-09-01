@@ -138,7 +138,7 @@ class PaymentVerification(BaseModel):
 
 # Authentication helpers
 async def upload_image_to_s3(image_content: bytes, filename: str, content_type: str) -> str:
-    """Upload image to S3 and return the public URL"""
+    """Upload image to S3 and return the public URL. Fallback to base64 if S3 fails."""
     try:
         # Generate unique filename
         unique_filename = f"products/{uuid.uuid4()}_{filename}"
@@ -156,8 +156,17 @@ async def upload_image_to_s3(image_content: bytes, filename: str, content_type: 
         return f"https://{S3_BUCKET_NAME}.s3.{os.environ['AWS_REGION']}.amazonaws.com/{unique_filename}"
     
     except ClientError as e:
-        logging.error(f"Failed to upload image to S3: {e}")
-        raise HTTPException(status_code=500, detail="Failed to upload image")
+        logging.warning(f"S3 upload failed, using base64 fallback: {e}")
+        # Fallback to base64 encoding for demo purposes
+        import base64
+        encoded_image = base64.b64encode(image_content).decode('utf-8')
+        return f"data:{content_type};base64,{encoded_image}"
+    except Exception as e:
+        logging.warning(f"S3 upload failed, using base64 fallback: {e}")
+        # Fallback to base64 encoding
+        import base64
+        encoded_image = base64.b64encode(image_content).decode('utf-8')
+        return f"data:{content_type};base64,{encoded_image}"
 
 async def get_current_user(request: Request):
     # Check for session token in cookies first
