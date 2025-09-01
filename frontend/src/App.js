@@ -147,7 +147,7 @@ const AuthModal = ({ onClose }) => {
         onClose();
         login();
       } else {
-        setError('User not found. Please register first or check your email.');
+        setError('User not found in our database. Please register first with your Thapar email to create an account, then login.');
       }
     } catch (error) {
       console.error('Login check error:', error);
