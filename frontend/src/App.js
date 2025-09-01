@@ -832,13 +832,19 @@ const SellProductModal = ({ onClose, onSuccess }) => {
       const response = await axios.get(`${API}/payment/tokens`, {
         withCredentials: true
       });
-      if (response.data.length > 0) {
+      // Only consider tokens that haven't been used yet
+      const validTokens = response.data.filter(token => token.status === 'paid');
+      if (validTokens.length > 0) {
         setHasValidToken(true);
         setStep('form');
+      } else {
+        setHasValidToken(false);
+        setStep('payment');
       }
     } catch (error) {
       console.error('Error checking payment tokens:', error);
       setHasValidToken(false);
+      setStep('payment');
     }
   };
 
