@@ -1042,12 +1042,23 @@ class ThaparMartTester:
                           f"Connection error: {str(e)}")
     
     def run_all_tests(self):
-        """Run all backend tests"""
+        """Run all backend tests - FOCUSED ON PAYMENT INTEGRATION ISSUE"""
         print("🚀 Starting thaparMART Backend Testing...")
         print(f"Testing against: {BASE_URL}")
+        print("🎯 FOCUS: Razorpay Payment Integration Issue - 'Failed to create payment order'")
         print("=" * 60)
         
-        # Run HIGH PRIORITY custom registration tests first
+        # Run FOCUSED PAYMENT TESTS FIRST (as requested)
+        print("\n🔥 PRIORITY: PAYMENT INTEGRATION TESTING")
+        self.test_complete_authentication_flow()
+        self.test_profile_completion_requirements()
+        self.test_payment_order_creation_detailed()
+        self.test_backend_logs_analysis()
+        self.test_razorpay_order_parameters()
+        self.test_payment_integration()
+        
+        # Run supporting tests
+        print("\n📋 SUPPORTING TESTS:")
         self.test_custom_registration_system()
         self.test_user_existence_check()
         self.test_mongodb_atlas_connection()
@@ -1056,7 +1067,6 @@ class ThaparMartTester:
         # Run other test suites
         self.test_api_endpoints_general()
         self.test_authentication_system()
-        self.test_payment_integration()
         self.test_user_profile_management()
         self.test_product_crud_operations()
         self.test_enhanced_product_creation()
