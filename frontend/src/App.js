@@ -866,8 +866,20 @@ const SellProductModal = ({ onClose, onSuccess }) => {
       
     } catch (error) {
       console.error('Error creating payment order:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      
       if (error.response?.status === 400 && error.response?.data?.detail?.includes('phone')) {
         setError('Please complete your profile with phone number first.');
+      } else if (error.response?.status === 401) {
+        setError('Session expired. Please login again and try.');
+      } else if (error.response?.status === 500) {
+        setError('Server error occurred. Please check your Razorpay account status and try again.');
+      } else if (error.response?.data?.detail) {
+        setError(`Error: ${error.response.data.detail}`);
       } else {
         setError('Failed to create payment order. Please try again.');
       }
