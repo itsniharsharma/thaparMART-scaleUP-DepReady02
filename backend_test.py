@@ -14,8 +14,8 @@ import uuid
 import hashlib
 import hmac
 
-# Configuration
-BASE_URL = "http://localhost:8001/api"
+# Configuration - Use production URL from frontend/.env
+BASE_URL = "https://thapar-auth-fix.preview.emergentagent.com/api"
 TEST_SESSION_ID = "test_session_" + str(uuid.uuid4())
 
 class ThaparMartTester:
