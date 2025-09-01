@@ -402,8 +402,6 @@ const AuthModal = ({ onClose }) => {
   );
 };
 
-const useAuth = () => useContext(AuthContext);
-
 // Navigation Component
 const Navigation = () => {
   const { user, logout } = useAuth();
