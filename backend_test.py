@@ -14,8 +14,8 @@ import uuid
 import hashlib
 import hmac
 
-# Configuration - Use production URL from frontend/.env
-BASE_URL = "https://payment-flow-fix-6.preview.emergentagent.com/api"
+# Configuration - Use URL from frontend/.env
+BASE_URL = "http://localhost:8001/api"
 TEST_SESSION_ID = "test_session_" + str(uuid.uuid4())
 
 class ThaparMartTester:
