@@ -25,6 +25,8 @@ class ThaparMartTester:
         self.session_token = None
         self.test_product_id = None
         self.test_results = {
+            "custom_registration": {"passed": 0, "failed": 0, "details": []},
+            "mongodb_atlas": {"passed": 0, "failed": 0, "details": []},
             "authentication": {"passed": 0, "failed": 0, "details": []},
             "user_profile": {"passed": 0, "failed": 0, "details": []},
             "product_crud": {"passed": 0, "failed": 0, "details": []},
