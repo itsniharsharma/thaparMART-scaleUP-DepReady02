@@ -51,6 +51,19 @@ class User(BaseModel):
     picture: Optional[str] = None
     phone: str  # Now mandatory
     bio: Optional[str] = None
+    # New fields for custom registration
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    thapar_email: Optional[str] = None
+    is_faculty: bool = False
+    # Student specific fields
+    branch: Optional[str] = None
+    roll_number: Optional[str] = None
+    batch: Optional[str] = None
+    # Faculty specific fields
+    department: Optional[str] = None
+    # Registration status
+    is_registered: bool = False  # Track if user completed custom registration
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
@@ -62,6 +75,18 @@ class UserUpdate(BaseModel):
     phone: str  # Now mandatory
     bio: Optional[str] = None
     picture: Optional[str] = None
+
+class UserRegistration(BaseModel):
+    first_name: str
+    last_name: str
+    thapar_email_prefix: str  # Just the XXXX part before @thapar.edu
+    is_faculty: bool = False
+    # Student fields (required if not faculty)
+    branch: Optional[str] = None
+    roll_number: Optional[str] = None
+    batch: Optional[str] = None
+    # Faculty fields (required if faculty)
+    department: Optional[str] = None
 
 class Product(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
