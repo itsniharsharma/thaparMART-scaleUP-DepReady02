@@ -272,11 +272,20 @@ async def authenticate_session(session_id: str = Form(...), response: Response =
         except Exception as e:
             raise HTTPException(status_code=401, detail=f"Failed to authenticate: {str(e)}")
     
-    # Check if user exists
-    existing_user = await db.users.find_one({"email": user_data["email"]})
+    # First, try to find user by thapar_email (for registered users)
+    existing_user = None
+    
+    # Try to find by thapar_email if the emergent email matches thapar.edu domain
+    if user_data["email"].endswith("@thapar.edu"):
+        existing_user = await db.users.find_one({"thapar_email": user_data["email"]})
+    
+    # Fallback: try to find by emergent email
+    if not existing_user:
+        existing_user = await db.users.find_one({"email": user_data["email"]})
     
     if not existing_user:
-        # Create new user with empty phone - they'll need to complete profile
+        # This shouldn't happen in the new flow, but handle gracefully
+        # Create minimal user - they should have registered first
         user_dict = {
             "id": str(uuid.uuid4()),
             "email": user_data["email"],
@@ -284,12 +293,37 @@ async def authenticate_session(session_id: str = Form(...), response: Response =
             "picture": user_data.get("picture"),
             "phone": "",  # Empty phone - needs to be completed
             "bio": None,
+            "first_name": None,
+            "last_name": None,
+            "thapar_email": user_data["email"] if user_data["email"].endswith("@thapar.edu") else None,
+            "is_faculty": False,
+            "branch": None,
+            "roll_number": None,
+            "batch": None,
+            "department": None,
+            "is_registered": False,  # Not properly registered
             "created_at": datetime.now(timezone.utc)
         }
         await db.users.insert_one(user_dict)
         user = User(**user_dict)
     else:
-        user = User(**existing_user)
+        # Update emergent auth data for existing registered user
+        update_data = {
+            "email": user_data["email"],
+            "picture": user_data.get("picture")
+        }
+        # Only update name if not set from registration
+        if not existing_user.get("first_name") or not existing_user.get("last_name"):
+            update_data["name"] = user_data["name"]
+        
+        await db.users.update_one(
+            {"id": existing_user["id"]},
+            {"$set": update_data}
+        )
+        
+        # Get updated user
+        updated_user = await db.users.find_one({"id": existing_user["id"]})
+        user = User(**updated_user)
     
     # Create session
     session_token = str(uuid.uuid4())
