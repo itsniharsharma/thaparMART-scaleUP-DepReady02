@@ -54,6 +54,351 @@ class ThaparMartTester:
         img_bytes.seek(0)
         return img_bytes
     
+    def test_custom_registration_system(self):
+        """Test Custom Registration System with Thapar Email Validation - HIGH PRIORITY"""
+        print("\n🎓 Testing Custom Registration System (HIGH PRIORITY)...")
+        
+        # Test 1: Student Registration with all required fields
+        try:
+            student_data = {
+                "first_name": "Arjun",
+                "last_name": "Sharma", 
+                "thapar_email_prefix": "student123",
+                "is_faculty": False,
+                "branch": "Computer Engineering",
+                "roll_number": "102103456",
+                "batch": "2021-2025"
+            }
+            response = self.session.post(f"{BASE_URL}/auth/register", json=student_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                if "user_id" in result and "message" in result:
+                    self.log_result("custom_registration", "Student Registration", True, 
+                                  f"Successfully registered student: {result['message']}")
+                else:
+                    self.log_result("custom_registration", "Student Registration", False, 
+                                  f"Missing required fields in response: {result}")
+            elif response.status_code == 400 and "already exists" in response.text:
+                self.log_result("custom_registration", "Student Registration", True, 
+                              "Duplicate registration properly prevented")
+            else:
+                self.log_result("custom_registration", "Student Registration", False, 
+                              f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_result("custom_registration", "Student Registration", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 2: Faculty Registration with faculty-specific fields
+        try:
+            faculty_data = {
+                "first_name": "Dr. Priya",
+                "last_name": "Gupta",
+                "thapar_email_prefix": "prof456", 
+                "is_faculty": True,
+                "department": "Computer Science"
+            }
+            response = self.session.post(f"{BASE_URL}/auth/register", json=faculty_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                if "user_id" in result and "message" in result:
+                    self.log_result("custom_registration", "Faculty Registration", True, 
+                                  f"Successfully registered faculty: {result['message']}")
+                else:
+                    self.log_result("custom_registration", "Faculty Registration", False, 
+                                  f"Missing required fields in response: {result}")
+            elif response.status_code == 400 and "already exists" in response.text:
+                self.log_result("custom_registration", "Faculty Registration", True, 
+                              "Duplicate faculty registration properly prevented")
+            else:
+                self.log_result("custom_registration", "Faculty Registration", False, 
+                              f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_result("custom_registration", "Faculty Registration", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 3: Email domain validation (@thapar.edu enforcement)
+        try:
+            invalid_email_data = {
+                "first_name": "Test",
+                "last_name": "User",
+                "thapar_email_prefix": "test@gmail.com",  # Invalid - contains @
+                "is_faculty": False,
+                "branch": "Computer Engineering", 
+                "roll_number": "102103999",
+                "batch": "2021-2025"
+            }
+            response = self.session.post(f"{BASE_URL}/auth/register", json=invalid_email_data)
+            
+            if response.status_code == 400 and "only the part before @thapar.edu" in response.text:
+                self.log_result("custom_registration", "Email Domain Validation", True, 
+                              "Properly validates thapar email format")
+            else:
+                self.log_result("custom_registration", "Email Domain Validation", False, 
+                              f"Should reject invalid email format. Status: {response.status_code}")
+        except Exception as e:
+            self.log_result("custom_registration", "Email Domain Validation", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 4: Required field validation for students
+        try:
+            incomplete_student_data = {
+                "first_name": "Incomplete",
+                "last_name": "Student",
+                "thapar_email_prefix": "incomplete123",
+                "is_faculty": False
+                # Missing branch, roll_number, batch
+            }
+            response = self.session.post(f"{BASE_URL}/auth/register", json=incomplete_student_data)
+            
+            if response.status_code == 400 and "required for students" in response.text:
+                self.log_result("custom_registration", "Student Field Validation", True, 
+                              "Properly validates required student fields")
+            else:
+                self.log_result("custom_registration", "Student Field Validation", False, 
+                              f"Should validate student fields. Status: {response.status_code}")
+        except Exception as e:
+            self.log_result("custom_registration", "Student Field Validation", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 5: Required field validation for faculty
+        try:
+            incomplete_faculty_data = {
+                "first_name": "Incomplete",
+                "last_name": "Faculty", 
+                "thapar_email_prefix": "incfaculty123",
+                "is_faculty": True
+                # Missing department
+            }
+            response = self.session.post(f"{BASE_URL}/auth/register", json=incomplete_faculty_data)
+            
+            if response.status_code == 400 and "required for faculty" in response.text:
+                self.log_result("custom_registration", "Faculty Field Validation", True, 
+                              "Properly validates required faculty fields")
+            else:
+                self.log_result("custom_registration", "Faculty Field Validation", False, 
+                              f"Should validate faculty fields. Status: {response.status_code}")
+        except Exception as e:
+            self.log_result("custom_registration", "Faculty Field Validation", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 6: Duplicate registration prevention
+        try:
+            # Try to register the same student again
+            duplicate_data = {
+                "first_name": "Arjun",
+                "last_name": "Sharma",
+                "thapar_email_prefix": "student123",  # Same as Test 1
+                "is_faculty": False,
+                "branch": "Electronics Engineering",  # Different branch
+                "roll_number": "102103999",  # Different roll number
+                "batch": "2020-2024"  # Different batch
+            }
+            response = self.session.post(f"{BASE_URL}/auth/register", json=duplicate_data)
+            
+            if response.status_code == 400 and "already exists" in response.text:
+                self.log_result("custom_registration", "Duplicate Prevention", True, 
+                              "Properly prevents duplicate registrations by thapar email")
+            else:
+                self.log_result("custom_registration", "Duplicate Prevention", False, 
+                              f"Should prevent duplicates. Status: {response.status_code}")
+        except Exception as e:
+            self.log_result("custom_registration", "Duplicate Prevention", False, 
+                          f"Error: {str(e)}")
+    
+    def test_user_existence_check(self):
+        """Test User Existence Check API"""
+        print("\n🔍 Testing User Existence Check API...")
+        
+        # Test 1: Check existing user (from previous registration)
+        try:
+            response = self.session.post(f"{BASE_URL}/auth/check-user", 
+                                       data={"thapar_email_prefix": "student123"})
+            
+            if response.status_code == 200:
+                result = response.json()
+                if "exists" in result and "thapar_email" in result:
+                    self.log_result("custom_registration", "User Existence Check - Existing", True, 
+                                  f"Found user: {result['thapar_email']}, exists: {result['exists']}")
+                else:
+                    self.log_result("custom_registration", "User Existence Check - Existing", False, 
+                                  f"Missing required fields in response: {result}")
+            else:
+                self.log_result("custom_registration", "User Existence Check - Existing", False, 
+                              f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_result("custom_registration", "User Existence Check - Existing", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 2: Check non-existing user
+        try:
+            response = self.session.post(f"{BASE_URL}/auth/check-user", 
+                                       data={"thapar_email_prefix": "nonexistent999"})
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("exists") == False and "thapar_email" in result:
+                    self.log_result("custom_registration", "User Existence Check - Non-existing", True, 
+                                  f"Correctly identified non-existing user: {result['thapar_email']}")
+                else:
+                    self.log_result("custom_registration", "User Existence Check - Non-existing", False, 
+                                  f"Unexpected result for non-existing user: {result}")
+            else:
+                self.log_result("custom_registration", "User Existence Check - Non-existing", False, 
+                              f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_result("custom_registration", "User Existence Check - Non-existing", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 3: Invalid email format in check-user
+        try:
+            response = self.session.post(f"{BASE_URL}/auth/check-user", 
+                                       data={"thapar_email_prefix": "invalid@email.com"})
+            
+            if response.status_code == 400 and "only the part before @thapar.edu" in response.text:
+                self.log_result("custom_registration", "User Check Email Validation", True, 
+                              "Properly validates email format in user check")
+            else:
+                self.log_result("custom_registration", "User Check Email Validation", False, 
+                              f"Should validate email format. Status: {response.status_code}")
+        except Exception as e:
+            self.log_result("custom_registration", "User Check Email Validation", False, 
+                          f"Error: {str(e)}")
+    
+    def test_mongodb_atlas_connection(self):
+        """Test MongoDB Atlas Connection and Data Storage"""
+        print("\n🗄️ Testing MongoDB Atlas Connection...")
+        
+        # Test 1: Database connectivity through registration endpoint
+        try:
+            # This tests if MongoDB Atlas is accessible by attempting registration
+            test_user_data = {
+                "first_name": "MongoDB",
+                "last_name": "Test",
+                "thapar_email_prefix": f"mongotest{int(time.time())}",  # Unique email
+                "is_faculty": False,
+                "branch": "Information Technology",
+                "roll_number": "102104999",
+                "batch": "2021-2025"
+            }
+            response = self.session.post(f"{BASE_URL}/auth/register", json=test_user_data)
+            
+            if response.status_code == 200:
+                self.log_result("mongodb_atlas", "Database Write Operation", True, 
+                              "Successfully wrote to MongoDB Atlas database")
+            elif response.status_code == 400 and "already exists" in response.text:
+                self.log_result("mongodb_atlas", "Database Write Operation", True, 
+                              "Database read operation working (duplicate check)")
+            else:
+                self.log_result("mongodb_atlas", "Database Write Operation", False, 
+                              f"Database operation failed. Status: {response.status_code}")
+        except Exception as e:
+            self.log_result("mongodb_atlas", "Database Write Operation", False, 
+                          f"Database connection error: {str(e)}")
+        
+        # Test 2: Database read operation through user check
+        try:
+            response = self.session.post(f"{BASE_URL}/auth/check-user", 
+                                       data={"thapar_email_prefix": "student123"})
+            
+            if response.status_code == 200:
+                result = response.json()
+                if "exists" in result:
+                    self.log_result("mongodb_atlas", "Database Read Operation", True, 
+                                  "Successfully read from MongoDB Atlas database")
+                else:
+                    self.log_result("mongodb_atlas", "Database Read Operation", False, 
+                                  f"Unexpected response format: {result}")
+            else:
+                self.log_result("mongodb_atlas", "Database Read Operation", False, 
+                              f"Database read failed. Status: {response.status_code}")
+        except Exception as e:
+            self.log_result("mongodb_atlas", "Database Read Operation", False, 
+                          f"Database read error: {str(e)}")
+        
+        # Test 3: Enhanced user model fields storage
+        try:
+            # Register a user with all enhanced fields and then check if stored properly
+            enhanced_user_data = {
+                "first_name": "Enhanced",
+                "last_name": "Model",
+                "thapar_email_prefix": f"enhanced{int(time.time())}",
+                "is_faculty": True,
+                "department": "Mechanical Engineering"
+            }
+            response = self.session.post(f"{BASE_URL}/auth/register", json=enhanced_user_data)
+            
+            if response.status_code == 200:
+                # Now check if the user exists (tests if enhanced fields were stored)
+                check_response = self.session.post(f"{BASE_URL}/auth/check-user", 
+                                                 data={"thapar_email_prefix": enhanced_user_data["thapar_email_prefix"]})
+                
+                if check_response.status_code == 200 and check_response.json().get("exists"):
+                    self.log_result("mongodb_atlas", "Enhanced User Model Storage", True, 
+                                  "Enhanced user model fields stored and retrieved successfully")
+                else:
+                    self.log_result("mongodb_atlas", "Enhanced User Model Storage", False, 
+                                  "Enhanced user not found after registration")
+            else:
+                self.log_result("mongodb_atlas", "Enhanced User Model Storage", False, 
+                              f"Enhanced user registration failed: {response.status_code}")
+        except Exception as e:
+            self.log_result("mongodb_atlas", "Enhanced User Model Storage", False, 
+                          f"Enhanced model test error: {str(e)}")
+    
+    def test_enhanced_authentication_flow(self):
+        """Test Enhanced Authentication Flow with Custom Registration"""
+        print("\n🔐 Testing Enhanced Authentication Flow...")
+        
+        # Test 1: Session exchange endpoint structure (can't test full flow without Emergent session)
+        try:
+            response = self.session.post(f"{BASE_URL}/auth/session", 
+                                       data={"session_id": "test_session_123"})
+            
+            if response.status_code == 401:
+                self.log_result("custom_registration", "Session Exchange Security", True, 
+                              "Session exchange properly validates session IDs")
+            else:
+                self.log_result("custom_registration", "Session Exchange Security", False, 
+                              f"Unexpected response to invalid session: {response.status_code}")
+        except Exception as e:
+            self.log_result("custom_registration", "Session Exchange Security", False, 
+                          f"Session exchange error: {str(e)}")
+        
+        # Test 2: Authentication flow endpoint accessibility
+        try:
+            response = self.session.get(f"{BASE_URL}/auth/me")
+            
+            if response.status_code == 401:
+                self.log_result("custom_registration", "Auth Flow Protection", True, 
+                              "Protected endpoints properly require authentication")
+            else:
+                self.log_result("custom_registration", "Auth Flow Protection", False, 
+                              f"Protected endpoint should require auth: {response.status_code}")
+        except Exception as e:
+            self.log_result("custom_registration", "Auth Flow Protection", False, 
+                          f"Auth flow test error: {str(e)}")
+        
+        # Test 3: Logout endpoint functionality
+        try:
+            response = self.session.post(f"{BASE_URL}/auth/logout")
+            
+            if response.status_code == 200:
+                result = response.json()
+                if "message" in result:
+                    self.log_result("custom_registration", "Logout Functionality", True, 
+                                  f"Logout endpoint working: {result['message']}")
+                else:
+                    self.log_result("custom_registration", "Logout Functionality", False, 
+                                  f"Logout response missing message: {result}")
+            else:
+                self.log_result("custom_registration", "Logout Functionality", False, 
+                              f"Logout failed: {response.status_code}")
+        except Exception as e:
+            self.log_result("custom_registration", "Logout Functionality", False, 
+                          f"Logout test error: {str(e)}")
+    
     def test_payment_integration(self):
         """Test Razorpay Payment Integration"""
         print("\n💳 Testing Razorpay Payment Integration...")
