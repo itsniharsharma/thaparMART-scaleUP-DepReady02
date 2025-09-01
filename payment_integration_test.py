@@ -10,7 +10,7 @@ import uuid
 import time
 
 # Configuration
-BASE_URL = "https://payment-flow-fix-6.preview.emergentagent.com/api"
+BASE_URL = "https://profile-completion-1.preview.emergentagent.com/api"
 TEST_SESSION_ID = "test_session_" + str(uuid.uuid4())
 
 class PaymentIntegrationTester:

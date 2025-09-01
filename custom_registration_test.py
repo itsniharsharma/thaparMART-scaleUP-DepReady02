@@ -10,7 +10,7 @@ import time
 import uuid
 
 # Configuration
-BASE_URL = "https://payment-flow-fix-6.preview.emergentagent.com/api"
+BASE_URL = "https://profile-completion-1.preview.emergentagent.com/api"
 
 class CustomRegistrationTester:
     def __init__(self):
