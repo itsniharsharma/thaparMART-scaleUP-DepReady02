@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Enhanced thaparMART with real-world scaling features: 1) Show all user's products in profile page 2) Allow multiple image uploads to Amazon S3 3) Store product info with seller's phone number in MongoDB Atlas 4) Make phone number mandatory for profile completion 5) Contact seller redirects to seller's profile 6) Scale for real college use with MongoDB Atlas and S3 integration 7) NEW: Razorpay payment integration - users must pay ₹20 before uploading products via QR code/UPI"
+user_problem_statement: "CUSTOM REGISTRATION SYSTEM: Replace Emergent direct auth with custom Thapar registration system. When user clicks Login/Register, show custom form first: Students need first name, last name, Branch, Roll number, batch, thapar mail (XXXX@thapar.edu). Faculty need first name, last name, department, thapar mail with faculty checkbox. System must check if user exists in MongoDB Atlas, if not register them, then do Emergent auth for session management. Users should be recognized properly after auth with MongoDB Atlas connection."
 
 backend:
   - task: "Emergent Authentication System"
