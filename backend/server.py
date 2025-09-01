@@ -187,6 +187,74 @@ async def get_current_user(request: Request):
     
     return User(**user)
 
+# Registration and Login Check routes
+@api_router.post("/auth/register")
+async def register_user(registration: UserRegistration):
+    """Register a new user with custom form data"""
+    
+    # Validate and create full email
+    thapar_email = f"{registration.thapar_email_prefix}@thapar.edu"
+    
+    # Validate email format
+    if not registration.thapar_email_prefix or "@" in registration.thapar_email_prefix:
+        raise HTTPException(status_code=400, detail="Please enter only the part before @thapar.edu")
+    
+    # Check if user already exists
+    existing_user = await db.users.find_one({"thapar_email": thapar_email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this thapar email already exists")
+    
+    # Validate required fields based on user type
+    if registration.is_faculty:
+        if not registration.department:
+            raise HTTPException(status_code=400, detail="Department is required for faculty")
+    else:
+        if not all([registration.branch, registration.roll_number, registration.batch]):
+            raise HTTPException(status_code=400, detail="Branch, roll number, and batch are required for students")
+    
+    # Create user data
+    user_data = {
+        "id": str(uuid.uuid4()),
+        "email": "",  # Will be set during Emergent auth
+        "name": f"{registration.first_name} {registration.last_name}",
+        "picture": None,
+        "phone": "",  # To be completed later
+        "bio": None,
+        "first_name": registration.first_name,
+        "last_name": registration.last_name,
+        "thapar_email": thapar_email,
+        "is_faculty": registration.is_faculty,
+        "branch": registration.branch if not registration.is_faculty else None,
+        "roll_number": registration.roll_number if not registration.is_faculty else None,
+        "batch": registration.batch if not registration.is_faculty else None,
+        "department": registration.department if registration.is_faculty else None,
+        "is_registered": True,
+        "created_at": datetime.now(timezone.utc)
+    }
+    
+    # Save to database
+    await db.users.insert_one(user_data)
+    
+    return {"message": "Registration successful! Please proceed to login.", "user_id": user_data["id"]}
+
+@api_router.post("/auth/check-user")
+async def check_user_exists(thapar_email_prefix: str = Form(...)):
+    """Check if user exists in database by thapar email"""
+    
+    if not thapar_email_prefix or "@" in thapar_email_prefix:
+        raise HTTPException(status_code=400, detail="Please enter only the part before @thapar.edu")
+    
+    thapar_email = f"{thapar_email_prefix}@thapar.edu"
+    
+    # Check if user exists
+    existing_user = await db.users.find_one({"thapar_email": thapar_email})
+    
+    return {
+        "exists": bool(existing_user),
+        "thapar_email": thapar_email,
+        "user_id": existing_user["id"] if existing_user else None
+    }
+
 # Authentication routes
 @api_router.post("/auth/session", response_model=User)
 async def authenticate_session(session_id: str = Form(...), response: Response = Response()):
