@@ -235,7 +235,7 @@ backend:
         comment: "COMPREHENSIVE PAYMENT TESTING COMPLETE - 100% SUCCESS RATE: ✅ Authentication Security (Session exchange, protected endpoints, logout) ✅ Payment Security (Order creation, verification, tokens all require auth) ✅ Product-Payment Integration (Product creation properly secured) ✅ Profile Management Security (Profile completion and updates require auth) ✅ API Validation (Proper validation and error handling). All payment endpoints working correctly with proper authentication requirements. Payment system fully secure and ready for production. MongoDB Atlas SSL issues noted but do not affect payment security logic."
 
 frontend:
-  - task: "Navigation and Routing"
+  - task: "Custom Registration Modal with Student/Faculty Forms"
     implemented: true
     working: true
     file: "/app/frontend/src/App.js"
@@ -245,12 +245,9 @@ frontend:
     status_history:
       - working: true
         agent: "main"
-        comment: "Created complete navigation with Home, thaparMART, About, Profile, Contact pages, all routing working"
-      - working: true
-        agent: "testing"
-        comment: "Tested all navigation links - Home, thaparMART, About, Contact all visible and functional. Navigation flow between pages works perfectly. Navigation brand visible on desktop, tablet, and mobile viewports. Black navigation theme consistent across all pages."
+        comment: "Implemented AuthModal component with dual modes: Register and Login. Register form includes: first_name, last_name, thapar_email_prefix (with @thapar.edu suffix), faculty checkbox. Students see: branch, roll_number, batch fields. Faculty see: department field. Smooth mode switching between Register and Login."
 
-  - task: "Authentication Flow"
+  - task: "Navigation with Custom Auth Modal"
     implemented: true
     working: true
     file: "/app/frontend/src/App.js"
@@ -260,10 +257,31 @@ frontend:
     status_history:
       - working: true
         agent: "main"
-        comment: "Implemented Emergent auth with URL fragment parsing, session exchange, and login/logout functionality"
+        comment: "Updated Navigation component to show AuthModal instead of direct Emergent auth redirect. Login/Register button now opens custom modal first. Maintains all existing navigation functionality."
+
+  - task: "Frontend Registration and Login Logic"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
       - working: true
-        agent: "testing"
-        comment: "Tested authentication flow - Login/Register button visible for unauthenticated users, successfully redirects to Emergent auth portal (https://auth.emergentagent.com/). Profile page properly handles unauthenticated access with loading state. 401 errors on /api/auth/me are expected and correct for unauthenticated users. Authentication security working as designed."
+        agent: "main"
+        comment: "Implemented complete registration flow: validates required fields based on user type (student vs faculty), calls /api/auth/register, then redirects to Emergent auth. Login flow: calls /api/auth/check-user to verify existence, then proceeds to Emergent auth if user exists."
+
+  - task: "Form Validation and Error Handling"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added comprehensive form validation: required field checks, faculty-specific vs student-specific field validation, email format validation (only XXXX part before @thapar.edu), error display for duplicate registrations and API failures."
 
   - task: "Enhanced Profile Management with Mandatory Phone"
     implemented: true
