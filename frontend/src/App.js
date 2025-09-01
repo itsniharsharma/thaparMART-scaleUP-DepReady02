@@ -965,6 +965,28 @@ const SellProductModal = ({ onClose, onSuccess }) => {
     setLoading(true);
     setError('');
 
+    // Validate images count
+    if (images.length === 0) {
+      setError('Please select at least one image for your product.');
+      setLoading(false);
+      return;
+    }
+
+    if (images.length > 6) {
+      setError('You can upload a maximum of 6 images per product.');
+      setLoading(false);
+      return;
+    }
+
+    // Validate image sizes
+    for (let image of images) {
+      if (image.size > 10 * 1024 * 1024) { // 10MB limit
+        setError(`Image "${image.name}" is too large. Max size is 10MB per image.`);
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
@@ -976,24 +998,46 @@ const SellProductModal = ({ onClose, onSuccess }) => {
         formDataToSend.append('images', image);
       });
 
-      await axios.post(`${API}/products`, formDataToSend, {
+      console.log('Attempting to create product with data:', {
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        category: formData.category,
+        imageCount: images.length
+      });
+
+      const response = await axios.post(`${API}/products`, formDataToSend, {
         withCredentials: true,
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
+      console.log('Product created successfully:', response.data);
+      alert('Product created successfully! You can now list another product by paying ₹20 again.');
       onSuccess();
     } catch (error) {
       console.error('Error creating product:', error);
+      console.error('Error response:', error.response?.data);
+      
       if (error.response?.status === 402) {
         setError('Payment required. Please pay ₹20 to upload products.');
         setStep('payment');
         setHasValidToken(false);
-      } else if (error.response?.status === 400 && error.response?.data?.detail?.includes('phone')) {
-        setError('Please complete your profile with phone number before creating products.');
+      } else if (error.response?.status === 400) {
+        const errorMsg = error.response?.data?.detail || 'Validation error occurred.';
+        if (errorMsg.includes('phone')) {
+          setError('Please complete your profile with phone number before creating products.');
+        } else {
+          setError(`Error: ${errorMsg}`);
+        }
+      } else if (error.response?.status === 401) {
+        setError('Session expired. Please login again and try.');
+      } else if (error.response?.status === 500) {
+        setError('Server error occurred. Please check your internet connection and try again.');
       } else {
-        setError('Failed to create product. Please try again.');
+        const errorMsg = error.response?.data?.detail || 'Unknown error occurred.';
+        setError(`Failed to create product: ${errorMsg}`);
       }
     } finally {
       setLoading(false);
