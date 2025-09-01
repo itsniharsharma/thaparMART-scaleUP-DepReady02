@@ -846,12 +846,9 @@ const SellProductModal = ({ onClose, onSuccess }) => {
     setPaymentLoading(true);
     setError('');
 
-    // Debug Razorpay availability
-    console.log('Razorpay from hook:', Razorpay);
-    console.log('Type of Razorpay:', typeof Razorpay);
-    
-    if (!Razorpay) {
-      setError('Razorpay is not available. Please refresh the page and try again.');
+    // Check if Razorpay is available globally (from script tag)
+    if (!window.Razorpay) {
+      setError('Razorpay is not loaded. Please refresh the page and try again.');
       setPaymentLoading(false);
       return;
     }
@@ -882,9 +879,12 @@ const SellProductModal = ({ onClose, onSuccess }) => {
 
     try {
       // Create Razorpay order
+      console.log('Creating payment order...');
       const orderResponse = await axios.post(`${API}/payment/create-order`, {}, {
         withCredentials: true
       });
+
+      console.log('Order created successfully:', orderResponse.data);
 
       const options = {
         key: orderResponse.data.key,
@@ -896,6 +896,7 @@ const SellProductModal = ({ onClose, onSuccess }) => {
         image: "/logo192.png",
         handler: async (response) => {
           try {
+            console.log('Payment successful, verifying...', response);
             // Verify payment
             await axios.post(`${API}/payment/verify`, {
               razorpay_order_id: response.razorpay_order_id,
@@ -905,12 +906,15 @@ const SellProductModal = ({ onClose, onSuccess }) => {
               withCredentials: true
             });
 
+            console.log('Payment verified successfully');
             setHasValidToken(true);
             setStep('form');
             setError('');
+            setPaymentLoading(false);
           } catch (error) {
             console.error('Payment verification failed:', error);
             setError('Payment verification failed. Please try again.');
+            setPaymentLoading(false);
           }
         },
         prefill: {
@@ -920,11 +924,17 @@ const SellProductModal = ({ onClose, onSuccess }) => {
         },
         theme: {
           color: "#000000"
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('Payment modal dismissed');
+            setPaymentLoading(false);
+          }
         }
       };
 
       console.log('Creating Razorpay instance with options:', options);
-      const razorpayInstance = new Razorpay(options);
+      const razorpayInstance = new window.Razorpay(options);
       razorpayInstance.open();
       
     } catch (error) {
@@ -946,7 +956,6 @@ const SellProductModal = ({ onClose, onSuccess }) => {
       } else {
         setError('Failed to create payment order. Please try again.');
       }
-    } finally {
       setPaymentLoading(false);
     }
   };
