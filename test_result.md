@@ -268,17 +268,17 @@ backend:
         comment: "ENHANCED REGISTRATION SYSTEM WITH PHONE NUMBER TESTING COMPLETE - 100% SUCCESS RATE: ✅ Phone Number Validation (6/6 tests passed) - +91 format validation, 13-character length validation, numeric validation, empty/missing field rejection all working perfectly ✅ Student Registration with Phone (3/3 tests passed) - Complete registration, different phone formats, field validation all working ✅ Faculty Registration with Phone (3/3 tests passed) - Complete registration, different departments, field validation all working ✅ Database Storage Verification (3/3 tests passed) - Phone numbers correctly stored and retrievable from MongoDB Atlas ✅ Existing Functionality Compatibility (4/4 tests passed) - Email validation, user existence check, login flow integration all maintained. TOTAL: 19/19 tests passed (100% success rate). Phone number functionality fully implemented and working correctly with proper validation, database storage, and backward compatibility."
 
 frontend:
-  - task: "Custom Registration Modal with Student/Faculty Forms"
+  - task: "Phone Number Registration Form Enhancement"
     implemented: true
     working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "Implemented AuthModal component with dual modes: Register and Login. Register form includes: first_name, last_name, thapar_email_prefix (with @thapar.edu suffix), faculty checkbox. Students see: branch, roll_number, batch fields. Faculty see: department field. Smooth mode switching between Register and Login."
+        comment: "Enhanced registration form in AuthModal component to include phone number input field with +91 as default. Added smart input handling that automatically maintains +91 prefix and limits input to 13 characters. Added comprehensive phone number validation in form submission logic. Updated form state to include phone field initialized with '+91'. Phone number field positioned between Thapar Email and faculty checkbox with proper styling and validation messages."
 
   - task: "Navigation with Custom Auth Modal"
     implemented: true
