@@ -817,6 +817,30 @@ const SellProductModal = ({ onClose, onSuccess }) => {
       return;
     }
 
+    // Check profile completeness before attempting payment
+    try {
+      const profileResponse = await axios.get(`${API}/users/profile/complete`, {
+        withCredentials: true
+      });
+      
+      if (!profileResponse.data.complete) {
+        setError('Please complete your profile with phone number first before making payment.');
+        setPaymentLoading(false);
+        return;
+      }
+      
+      console.log('✅ Profile is complete, proceeding with payment');
+    } catch (profileError) {
+      console.error('Profile check error:', profileError);
+      if (profileError.response?.status === 401) {
+        setError('Please login again to continue.');
+      } else {
+        setError('Unable to verify profile. Please refresh and try again.');
+      }
+      setPaymentLoading(false);
+      return;
+    }
+
     try {
       // Create Razorpay order
       const orderResponse = await axios.post(`${API}/payment/create-order`, {}, {
