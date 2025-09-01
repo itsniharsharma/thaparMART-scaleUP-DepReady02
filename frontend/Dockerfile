@@ -4,15 +4,18 @@ FROM node:18-alpine as build
 WORKDIR /app
 
 # Copy package files
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock* ./
 
-# Install dependencies
-RUN yarn install --frozen-lockfile
+# Clear npm cache and install dependencies without lockfile restrictions
+RUN npm cache clean --force
+RUN rm -rf node_modules yarn.lock package-lock.json
+RUN yarn install --network-timeout 100000
 
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application with increased memory
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN yarn build
 
 # Production stage with Nginx
