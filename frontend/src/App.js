@@ -292,6 +292,29 @@ const AuthModal = ({ onClose }) => {
                 <p className="text-sm text-gray-500 mt-1">Enter only the part before @thapar.edu</p>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium mb-1">Phone Number *</label>
+                <input
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => {
+                    // Ensure +91 prefix is always maintained
+                    let value = e.target.value;
+                    if (!value.startsWith('+91')) {
+                      value = '+91' + value.replace(/^\+91/, '');
+                    }
+                    // Limit to 13 characters (+91 + 10 digits)
+                    if (value.length <= 13) {
+                      setFormData({...formData, phone: value});
+                    }
+                  }}
+                  placeholder="+919876543210"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                />
+                <p className="text-sm text-gray-500 mt-1">Enter your phone number with +91 prefix</p>
+              </div>
+
               <div className="flex items-center">
                 <input
                   type="checkbox"
