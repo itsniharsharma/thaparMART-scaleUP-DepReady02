@@ -193,17 +193,39 @@ networks:
     def build_and_start_services(self):
         print("\n🔨 Building and starting services...")
         print("This may take a few minutes on first run...")
+        print("⚠️  If frontend build fails, trying alternative approach...")
         
         try:
-            # Build and start services
+            # First try normal build
             result = subprocess.run(['docker-compose', 'up', '--build', '-d'], 
                                   cwd=self.project_root, capture_output=True, text=True)
             
             if result.returncode == 0:
                 print("✅ Services started successfully!")
+                return
             else:
-                print(f"❌ Failed to start services:")
-                print(result.stderr)
+                print(f"⚠️  First attempt failed, trying to rebuild without cache...")
+                print("Build output:", result.stderr)
+                
+                # Try building without cache
+                result2 = subprocess.run(['docker-compose', 'build', '--no-cache'], 
+                                       cwd=self.project_root, capture_output=True, text=True)
+                
+                if result2.returncode == 0:
+                    # Now start the services
+                    result3 = subprocess.run(['docker-compose', 'up', '-d'], 
+                                           cwd=self.project_root, capture_output=True, text=True)
+                    if result3.returncode == 0:
+                        print("✅ Services started successfully on second attempt!")
+                        return
+                
+                print(f"❌ Failed to start services after multiple attempts:")
+                print("Error details:", result.stderr)
+                print("\n🔧 Troubleshooting suggestions:")
+                print("1. Make sure Docker has enough memory (4GB+ recommended)")
+                print("2. Check your internet connection")
+                print("3. Try running: docker system prune -a")
+                print("4. Restart Docker Desktop")
                 sys.exit(1)
                 
         except Exception as e:
