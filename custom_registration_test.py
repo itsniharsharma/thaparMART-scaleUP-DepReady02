@@ -10,7 +10,7 @@ import time
 import uuid
 
 # Configuration
-BASE_URL = "https://profile-completion-1.preview.emergentagent.com/api"
+BASE_URL = "https://multi-image-seller.preview.emergentagent.com/api"
 
 class CustomRegistrationTester:
     def __init__(self):
