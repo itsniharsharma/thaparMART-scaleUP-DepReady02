@@ -80,6 +80,7 @@ class UserRegistration(BaseModel):
     first_name: str
     last_name: str
     thapar_email_prefix: str  # Just the XXXX part before @thapar.edu
+    phone: str  # Phone number with +91 prefix
     is_faculty: bool = False
     # Student fields (required if not faculty)
     branch: Optional[str] = None
