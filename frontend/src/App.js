@@ -107,6 +107,7 @@ const AuthModal = ({ onClose }) => {
     firstName: '',
     lastName: '',
     thaparEmailPrefix: '',
+    phone: '+91', // Default +91 prefix
     isFaculty: false,
     // Student fields
     branch: '',
