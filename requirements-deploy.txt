@@ -1,0 +1,17 @@
+# Python dependencies for deployment scripts
+# Install with: pip install -r requirements-deploy.txt
+
+# No external dependencies required
+# The deployment scripts use only Python standard library modules:
+# - os
+# - sys  
+# - subprocess
+# - time
+# - json
+# - getpass
+# - pathlib
+
+# If you want to add additional features later, you can add:
+# requests>=2.31.0  # For HTTP requests
+# pyyaml>=6.0       # For YAML parsing
+# click>=8.0.0      # For better CLI interface
