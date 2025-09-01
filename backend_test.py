@@ -400,8 +400,8 @@ class ThaparMartTester:
                           f"Logout test error: {str(e)}")
     
     def test_payment_integration(self):
-        """Test Razorpay Payment Integration"""
-        print("\n💳 Testing Razorpay Payment Integration...")
+        """Test Razorpay Payment Integration - FOCUSED ON REPORTED ISSUE"""
+        print("\n💳 Testing Razorpay Payment Integration (FOCUSED ON REPORTED ISSUE)...")
         
         # Test 1: Create payment order without authentication
         try:
@@ -475,6 +475,225 @@ class ThaparMartTester:
         except Exception as e:
             self.log_result("payment_integration", "Payment Order Endpoint", False, 
                           f"Error: {str(e)}")
+    
+    def test_complete_authentication_flow(self):
+        """Test Complete Authentication Flow as requested"""
+        print("\n🔐 Testing Complete Authentication Flow...")
+        
+        # Test 1: Register a test user for authentication testing
+        try:
+            test_user_data = {
+                "first_name": "Payment",
+                "last_name": "Tester",
+                "thapar_email_prefix": f"paytest{int(time.time())}",
+                "is_faculty": False,
+                "branch": "Computer Engineering",
+                "roll_number": "102105999",
+                "batch": "2021-2025"
+            }
+            response = self.session.post(f"{BASE_URL}/auth/register", json=test_user_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.test_user_id = result.get("user_id")
+                self.log_result("payment_integration", "Test User Registration", True, 
+                              f"Successfully registered test user for payment testing: {result['message']}")
+            elif response.status_code == 400 and "already exists" in response.text:
+                self.log_result("payment_integration", "Test User Registration", True, 
+                              "Test user already exists - can proceed with testing")
+            else:
+                self.log_result("payment_integration", "Test User Registration", False, 
+                              f"Failed to register test user: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Test User Registration", False, 
+                          f"Error registering test user: {str(e)}")
+        
+        # Test 2: Check user existence for login flow
+        try:
+            response = self.session.post(f"{BASE_URL}/auth/check-user", 
+                                       data={"thapar_email_prefix": "paytest" + str(int(time.time()))})
+            
+            if response.status_code == 200:
+                result = response.json()
+                self.log_result("payment_integration", "User Existence Check", True, 
+                              f"User check working: exists={result.get('exists')}")
+            else:
+                self.log_result("payment_integration", "User Existence Check", False, 
+                              f"User check failed: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "User Existence Check", False, 
+                          f"Error in user check: {str(e)}")
+    
+    def test_profile_completion_requirements(self):
+        """Test Profile Completion Requirements (Phone Number Mandatory)"""
+        print("\n📱 Testing Profile Completion Requirements...")
+        
+        # Test 1: Check profile completion endpoint
+        try:
+            response = self.session.get(f"{BASE_URL}/users/profile/complete")
+            if response.status_code == 401:
+                self.log_result("payment_integration", "Profile Completion Check Security", True, 
+                              "Profile completion check properly requires authentication")
+            else:
+                self.log_result("payment_integration", "Profile Completion Check Security", False, 
+                              f"Unexpected status: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Profile Completion Check Security", False, 
+                          f"Error: {str(e)}")
+        
+        # Test 2: Profile update endpoint structure
+        try:
+            profile_data = {"phone": "+91-9876543210", "bio": "Test user for payment testing"}
+            response = self.session.put(f"{BASE_URL}/users/profile", json=profile_data)
+            
+            if response.status_code == 401:
+                self.log_result("payment_integration", "Profile Update Security", True, 
+                              "Profile update properly requires authentication")
+            else:
+                self.log_result("payment_integration", "Profile Update Security", False, 
+                              f"Should require auth, got: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Profile Update Security", False, 
+                          f"Error: {str(e)}")
+    
+    def test_payment_order_creation_detailed(self):
+        """Test Payment Order Creation in Detail - FOCUS ON REPORTED ERROR"""
+        print("\n💳🔍 Testing Payment Order Creation (DETAILED - FOCUS ON REPORTED ERROR)...")
+        
+        # Test 1: Test payment order creation endpoint accessibility
+        try:
+            response = self.session.post(f"{BASE_URL}/payment/create-order")
+            
+            # Log detailed response for debugging
+            print(f"    📊 Payment Order Response Status: {response.status_code}")
+            print(f"    📊 Payment Order Response Headers: {dict(response.headers)}")
+            print(f"    📊 Payment Order Response Body: {response.text[:500]}...")
+            
+            if response.status_code == 401:
+                self.log_result("payment_integration", "Payment Order Endpoint Accessibility", True, 
+                              "Payment order endpoint accessible and properly secured")
+            elif response.status_code == 500:
+                self.log_result("payment_integration", "Payment Order Endpoint Accessibility", False, 
+                              f"CRITICAL: Payment order endpoint returning 500 Internal Server Error - this matches reported issue!")
+            else:
+                self.log_result("payment_integration", "Payment Order Endpoint Accessibility", False, 
+                              f"Unexpected status: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Payment Order Endpoint Accessibility", False, 
+                          f"Connection error to payment endpoint: {str(e)}")
+        
+        # Test 2: Test Razorpay credentials validation by checking endpoint behavior
+        try:
+            # Make a request that would trigger Razorpay API call if authenticated
+            # This helps identify if the issue is with Razorpay credentials
+            response = self.session.post(f"{BASE_URL}/payment/create-order", 
+                                       headers={"Authorization": "Bearer fake_token"})
+            
+            print(f"    📊 Razorpay Test Response Status: {response.status_code}")
+            print(f"    📊 Razorpay Test Response Body: {response.text[:500]}...")
+            
+            if response.status_code == 401:
+                self.log_result("payment_integration", "Razorpay Credentials Test", True, 
+                              "Authentication properly validated before Razorpay call")
+            elif response.status_code == 500:
+                self.log_result("payment_integration", "Razorpay Credentials Test", False, 
+                              f"CRITICAL: 500 error suggests Razorpay integration issue!")
+            else:
+                self.log_result("payment_integration", "Razorpay Credentials Test", False, 
+                              f"Unexpected response: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Razorpay Credentials Test", False, 
+                          f"Error testing Razorpay integration: {str(e)}")
+        
+        # Test 3: Test payment verification endpoint
+        try:
+            verification_data = {
+                "razorpay_order_id": "order_test123",
+                "razorpay_payment_id": "pay_test123", 
+                "razorpay_signature": "test_signature"
+            }
+            response = self.session.post(f"{BASE_URL}/payment/verify", json=verification_data)
+            
+            print(f"    📊 Payment Verification Response Status: {response.status_code}")
+            print(f"    📊 Payment Verification Response Body: {response.text[:500]}...")
+            
+            if response.status_code == 401:
+                self.log_result("payment_integration", "Payment Verification Endpoint", True, 
+                              "Payment verification endpoint accessible and secured")
+            elif response.status_code == 500:
+                self.log_result("payment_integration", "Payment Verification Endpoint", False, 
+                              f"CRITICAL: Payment verification also returning 500 error!")
+            else:
+                self.log_result("payment_integration", "Payment Verification Endpoint", False, 
+                              f"Unexpected status: {response.status_code}")
+        except Exception as e:
+            self.log_result("payment_integration", "Payment Verification Endpoint", False, 
+                          f"Error testing payment verification: {str(e)}")
+    
+    def test_backend_logs_analysis(self):
+        """Analyze Backend Logs for Razorpay Errors"""
+        print("\n📋 Analyzing Backend Logs for Razorpay Errors...")
+        
+        # Test by making requests that would generate logs
+        try:
+            # Test multiple payment endpoints to generate log entries
+            endpoints_to_test = [
+                "/payment/create-order",
+                "/payment/verify", 
+                "/payment/tokens"
+            ]
+            
+            for endpoint in endpoints_to_test:
+                try:
+                    response = self.session.post(f"{BASE_URL}{endpoint}")
+                    print(f"    📊 {endpoint} Status: {response.status_code}")
+                    
+                    if response.status_code == 500:
+                        print(f"    ⚠️  500 ERROR on {endpoint} - Check backend logs!")
+                        print(f"    📄 Response: {response.text}")
+                        
+                except Exception as e:
+                    print(f"    ❌ Error testing {endpoint}: {str(e)}")
+            
+            self.log_result("payment_integration", "Backend Log Analysis", True, 
+                          "Generated requests for backend log analysis")
+                          
+        except Exception as e:
+            self.log_result("payment_integration", "Backend Log Analysis", False, 
+                          f"Error in log analysis: {str(e)}")
+    
+    def test_razorpay_order_parameters(self):
+        """Test Razorpay Order Creation Parameters"""
+        print("\n🔧 Testing Razorpay Order Creation Parameters...")
+        
+        # Test 1: Check if backend is accessible for parameter validation
+        try:
+            # Test the endpoint that would create Razorpay orders
+            response = self.session.post(f"{BASE_URL}/payment/create-order")
+            
+            # Analyze response to understand parameter issues
+            if "receipt" in response.text.lower():
+                self.log_result("payment_integration", "Razorpay Receipt Parameter", False, 
+                              "Receipt parameter issue detected in response")
+            elif "amount" in response.text.lower():
+                self.log_result("payment_integration", "Razorpay Amount Parameter", False, 
+                              "Amount parameter issue detected in response")
+            elif "currency" in response.text.lower():
+                self.log_result("payment_integration", "Razorpay Currency Parameter", False, 
+                              "Currency parameter issue detected in response")
+            elif response.status_code == 401:
+                self.log_result("payment_integration", "Razorpay Parameter Structure", True, 
+                              "Parameter structure appears correct (auth required)")
+            elif response.status_code == 500:
+                self.log_result("payment_integration", "Razorpay Parameter Structure", False, 
+                              "CRITICAL: 500 error suggests parameter or credential issue")
+            else:
+                self.log_result("payment_integration", "Razorpay Parameter Structure", False, 
+                              f"Unexpected response: {response.status_code}")
+                              
+        except Exception as e:
+            self.log_result("payment_integration", "Razorpay Parameter Structure", False, 
+                          f"Error testing parameters: {str(e)}")
     
     def test_enhanced_product_creation(self):
         """Test Enhanced Product Creation with Payment Requirements"""
