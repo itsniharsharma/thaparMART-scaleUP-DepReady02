@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "REGISTRATION FAILURE ISSUE RESOLVED: User reported that registration was failing and users could not successfully register themselves. The root cause was MongoDB Atlas authentication failure due to expired credentials. Fixed by updating to new MongoDB Atlas connection string provided by user. Registration now works perfectly with all user data stored correctly in Atlas database thaparMARTN matching the specified format."
+user_problem_statement: "PHONE NUMBER REGISTRATION ENHANCEMENT: User wants to add phone number functionality to registration form. When user registers (either student or faculty), they must enter their phone number in registration form with +91 as default. Once user is successfully logged in, the entered phone number should be displayed in the profile section. The phone number must be stored in the database during registration."
 
 backend:
   - task: "Custom Registration System with Thapar Email Validation"
