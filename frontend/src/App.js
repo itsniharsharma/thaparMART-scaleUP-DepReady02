@@ -917,6 +917,8 @@ const SellProductModal = ({ onClose, onSuccess }) => {
             setStep('form');
             setError('');
             setPaymentLoading(false);
+            // Show success message
+            alert('Payment successful! You can now create one product. For additional products, you will need to pay ₹20 again.');
           } catch (error) {
             console.error('Payment verification failed:', error);
             setError('Payment verification failed. Please try again.');
