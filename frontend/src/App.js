@@ -971,6 +971,17 @@ const SellProductModal = ({ onClose, onSuccess }) => {
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               {error}
+              {error.includes('profile') && (
+                <div className="mt-2">
+                  <a 
+                    href="/profile" 
+                    className="text-blue-600 underline hover:text-blue-800"
+                    onClick={onClose}
+                  >
+                    → Go to Profile to add phone number
+                  </a>
+                </div>
+              )}
             </div>
           )}
 
