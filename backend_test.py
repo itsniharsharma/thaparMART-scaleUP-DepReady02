@@ -828,7 +828,13 @@ class ThaparMartTester:
         print(f"Testing against: {BASE_URL}")
         print("=" * 60)
         
-        # Run all test suites
+        # Run HIGH PRIORITY custom registration tests first
+        self.test_custom_registration_system()
+        self.test_user_existence_check()
+        self.test_mongodb_atlas_connection()
+        self.test_enhanced_authentication_flow()
+        
+        # Run other test suites
         self.test_api_endpoints_general()
         self.test_authentication_system()
         self.test_payment_integration()
