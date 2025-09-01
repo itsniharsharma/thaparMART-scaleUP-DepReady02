@@ -171,6 +171,20 @@ const AuthModal = ({ onClose }) => {
         return;
       }
 
+      // Validate phone number
+      if (!formData.phone || formData.phone.trim() === '' || formData.phone === '+91') {
+        setError('Please enter your phone number.');
+        setLoading(false);
+        return;
+      }
+
+      // Ensure phone number starts with +91 and has 10 more digits
+      if (!formData.phone.startsWith('+91') || formData.phone.length !== 13 || !formData.phone.slice(3).match(/^\d{10}$/)) {
+        setError('Please enter a valid phone number starting with +91 followed by 10 digits.');
+        setLoading(false);
+        return;
+      }
+
       if (formData.isFaculty && !formData.department) {
         setError('Department is required for faculty.');
         setLoading(false);
@@ -188,6 +202,7 @@ const AuthModal = ({ onClose }) => {
         first_name: formData.firstName,
         last_name: formData.lastName,
         thapar_email_prefix: formData.thaparEmailPrefix,
+        phone: formData.phone,
         is_faculty: formData.isFaculty,
         branch: formData.isFaculty ? null : formData.branch,
         roll_number: formData.isFaculty ? null : formData.rollNumber,
