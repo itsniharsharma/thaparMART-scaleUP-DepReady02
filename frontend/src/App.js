@@ -100,6 +100,310 @@ const AuthProvider = ({ children }) => {
 
 const useAuth = () => useContext(AuthContext);
 
+// Auth Modal Component
+const AuthModal = ({ onClose }) => {
+  const [mode, setMode] = useState('register'); // 'register' or 'login'
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    thaparEmailPrefix: '',
+    isFaculty: false,
+    // Student fields
+    branch: '',
+    rollNumber: '',
+    batch: '',
+    // Faculty fields
+    department: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const login = (redirectUrl) => {
+    // Use current frontend URL as redirect target
+    const currentUrl = redirectUrl || window.location.origin;
+    const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(currentUrl)}`;
+    console.log('Redirecting to auth with redirect URL:', currentUrl);
+    window.location.href = authUrl;
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // Check if user exists
+      const formDataToSend = new FormData();
+      formDataToSend.append('thapar_email_prefix', formData.thaparEmailPrefix);
+
+      const response = await axios.post(`${API}/auth/check-user`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.data.exists) {
+        // User exists, proceed to Emergent auth
+        onClose();
+        login();
+      } else {
+        setError('User not found. Please register first or check your email.');
+      }
+    } catch (error) {
+      console.error('Login check error:', error);
+      setError('Failed to check user. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // Validate required fields
+      if (!formData.firstName || !formData.lastName || !formData.thaparEmailPrefix) {
+        setError('Please fill in all required fields.');
+        setLoading(false);
+        return;
+      }
+
+      if (formData.isFaculty && !formData.department) {
+        setError('Department is required for faculty.');
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.isFaculty && (!formData.branch || !formData.rollNumber || !formData.batch)) {
+        setError('Branch, roll number, and batch are required for students.');
+        setLoading(false);
+        return;
+      }
+
+      // Register user
+      const registrationData = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        thapar_email_prefix: formData.thaparEmailPrefix,
+        is_faculty: formData.isFaculty,
+        branch: formData.isFaculty ? null : formData.branch,
+        roll_number: formData.isFaculty ? null : formData.rollNumber,
+        batch: formData.isFaculty ? null : formData.batch,
+        department: formData.isFaculty ? formData.department : null
+      };
+
+      await axios.post(`${API}/auth/register`, registrationData);
+
+      // Registration successful, proceed to Emergent auth
+      onClose();
+      login();
+    } catch (error) {
+      console.error('Registration error:', error);
+      if (error.response?.data?.detail) {
+        setError(error.response.data.detail);
+      } else {
+        setError('Registration failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">
+              {mode === 'register' ? 'Register' : 'Login'}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-2xl"
+            >
+              ×
+            </button>
+          </div>
+          
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
+
+          {mode === 'register' ? (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">First Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Last Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Thapar Email *</label>
+                <div className="flex">
+                  <input
+                    type="text"
+                    required
+                    value={formData.thaparEmailPrefix}
+                    onChange={(e) => setFormData({...formData, thaparEmailPrefix: e.target.value})}
+                    placeholder="username"
+                    className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                  />
+                  <span className="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-gray-600">
+                    @thapar.edu
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">Enter only the part before @thapar.edu</p>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isFaculty"
+                  checked={formData.isFaculty}
+                  onChange={(e) => setFormData({...formData, isFaculty: e.target.checked})}
+                  className="mr-2"
+                />
+                <label htmlFor="isFaculty" className="text-sm font-medium">I am a faculty member</label>
+              </div>
+
+              {formData.isFaculty ? (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Department *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.department}
+                    onChange={(e) => setFormData({...formData, department: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                    placeholder="e.g., Computer Science"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Branch *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.branch}
+                      onChange={(e) => setFormData({...formData, branch: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                      placeholder="e.g., Computer Engineering"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Roll Number *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.rollNumber}
+                        onChange={(e) => setFormData({...formData, rollNumber: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                        placeholder="e.g., 102103456"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Batch *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.batch}
+                        onChange={(e) => setFormData({...formData, batch: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                        placeholder="e.g., 2021-2025"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+              >
+                {loading ? 'Registering...' : 'Register'}
+              </button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setMode('login')}
+                  className="text-black hover:underline"
+                >
+                  Already a user? Login
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Thapar Email *</label>
+                <div className="flex">
+                  <input
+                    type="text"
+                    required
+                    value={formData.thaparEmailPrefix}
+                    onChange={(e) => setFormData({...formData, thaparEmailPrefix: e.target.value})}
+                    placeholder="username"
+                    className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent"
+                  />
+                  <span className="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-gray-600">
+                    @thapar.edu
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">Enter only the part before @thapar.edu</p>
+              </div>
+              
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+              >
+                {loading ? 'Checking...' : 'Login'}
+              </button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setMode('register')}
+                  className="text-black hover:underline"
+                >
+                  New user? Register
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const useAuth = () => useContext(AuthContext);
+
 // Navigation Component
 const Navigation = () => {
   const { user, logout } = useAuth();
