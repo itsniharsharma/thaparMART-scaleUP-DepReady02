@@ -200,6 +200,19 @@ async def register_user(registration: UserRegistration):
     if not registration.thapar_email_prefix or "@" in registration.thapar_email_prefix:
         raise HTTPException(status_code=400, detail="Please enter only the part before @thapar.edu")
     
+    # Validate phone number format
+    if not registration.phone or not registration.phone.strip():
+        raise HTTPException(status_code=400, detail="Phone number is required")
+    
+    # Ensure phone number starts with +91
+    phone = registration.phone.strip()
+    if not phone.startswith("+91"):
+        raise HTTPException(status_code=400, detail="Phone number must start with +91")
+    
+    # Basic phone number validation (should be +91 followed by 10 digits)
+    if len(phone) != 13 or not phone[3:].isdigit():
+        raise HTTPException(status_code=400, detail="Please enter a valid phone number (+91 followed by 10 digits)")
+    
     # Check if user already exists
     existing_user = await db.users.find_one({"thapar_email": thapar_email})
     if existing_user:
@@ -219,7 +232,7 @@ async def register_user(registration: UserRegistration):
         "email": "",  # Will be set during Emergent auth
         "name": f"{registration.first_name} {registration.last_name}",
         "picture": None,
-        "phone": "",  # To be completed later
+        "phone": phone,  # Store the validated phone number
         "bio": None,
         "first_name": registration.first_name,
         "last_name": registration.last_name,
