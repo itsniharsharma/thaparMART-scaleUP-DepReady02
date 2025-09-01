@@ -1118,15 +1118,31 @@ const SellProductModal = ({ onClose, onSuccess }) => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Product Images (Multiple allowed)</label>
+                <label className="block text-sm font-medium mb-1">Product Images (Max 6 images)</label>
                 <input
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => setImages(Array.from(e.target.files))}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files);
+                    if (files.length > 6) {
+                      setError('You can only upload a maximum of 6 images per product.');
+                      e.target.value = ''; // Clear the input
+                      return;
+                    }
+                    setImages(files);
+                    setError(''); // Clear any previous error
+                  }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 />
-                <p className="text-sm text-gray-500 mt-1">You can upload multiple images. Max 10MB per image.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  You can upload up to 6 images. Max 10MB per image. Current: {images.length}/6
+                </p>
+                {images.length > 0 && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    Selected files: {images.map(img => img.name).join(', ')}
+                  </div>
+                )}
               </div>
               
               <button
